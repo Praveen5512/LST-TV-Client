@@ -148,6 +148,16 @@
             android:contentDescription="Next Track"
             android:focusable="true"
             android:src="@drawable/ic_skip_next" />
+
+        <ImageButton
+            android:id="@+id/btnExternal"
+            android:layout_width="54dp"
+            android:layout_height="54dp"
+            android:layout_marginStart="16dp"
+            android:background="@drawable/selector_keypad_button"
+            android:contentDescription="Open in External Player"
+            android:focusable="true"
+            android:src="@drawable/ic_open_in_new" />
     </LinearLayout>
 
     <!-- Bottom Queue Drawer -->

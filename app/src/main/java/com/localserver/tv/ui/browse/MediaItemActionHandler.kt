@@ -6,7 +6,8 @@ import androidx.fragment.app.FragmentManager
 import com.localserver.tv.data.repository.MediaCardModel
 import com.localserver.tv.ui.photo.PhotoSlideshowActivity
 import com.localserver.tv.ui.player.AudioPlayerActivity
-import com.localserver.tv.ui.player.ResumePlaybackDialog
+import com.localserver.tv.ui.player.ExternalPlayerHelper
+import com.localserver.tv.ui.player.MediaActionDialog
 import com.localserver.tv.ui.player.VideoPlayerActivity
 
 class MediaItemActionHandler(
@@ -22,10 +23,10 @@ class MediaItemActionHandler(
         val media = card.mediaItem
         when {
             media.isDirectory -> {
-                onFolderSelected(card.shareId, media.path)
+                onFolderSelected(card.shareId, media.effectivePath)
             }
             media.isVideo -> {
-                playVideo(card)
+                showVideoActionDialog(card)
             }
             media.isAudio -> {
                 playAudio(card, siblingItems)
@@ -36,26 +37,28 @@ class MediaItemActionHandler(
         }
     }
 
-    private fun playVideo(card: MediaCardModel) {
+    private fun showVideoActionDialog(card: MediaCardModel) {
         val bookmark = card.resumePositionMs
-        if (bookmark > 30_000L) {
-            val dialog = ResumePlaybackDialog.newInstance(card.title, bookmark) { resume ->
-                val startPos = if (resume) bookmark else 0L
-                launchVideoPlayer(card, startPos)
-            }
-            dialog.show(fragmentManager, ResumePlaybackDialog.TAG)
-        } else {
-            launchVideoPlayer(card, 0L)
+        val dialog = MediaActionDialog.newInstance(
+            title = card.title,
+            subtitle = card.subtitle,
+            streamUrl = card.streamUrl,
+            mimeType = card.mediaItem.mimeType,
+            resumePos = bookmark
+        ) { startPositionMs ->
+            launchVideoPlayer(card, startPositionMs)
         }
+        dialog.show(fragmentManager, MediaActionDialog.TAG)
     }
 
     private fun launchVideoPlayer(card: MediaCardModel, startPositionMs: Long) {
         val intent = Intent(context, VideoPlayerActivity::class.java).apply {
-            putExtra(VideoPlayerActivity.EXTRA_STREAM_URL, card.streamUrl)
+            putExtra(VideoPlayerActivity.EXTRA_STREAM_URL, ExternalPlayerHelper.sanitizeStreamUrl(card.streamUrl))
             putExtra(VideoPlayerActivity.EXTRA_TITLE, card.title)
             putExtra(VideoPlayerActivity.EXTRA_SUBTITLE, card.subtitle)
+            putExtra(VideoPlayerActivity.EXTRA_MIME_TYPE, card.mediaItem.mimeType)
             putExtra(VideoPlayerActivity.EXTRA_SHARE_ID, card.shareId)
-            putExtra(VideoPlayerActivity.EXTRA_FILE_PATH, card.mediaItem.path)
+            putExtra(VideoPlayerActivity.EXTRA_FILE_PATH, card.mediaItem.effectivePath)
             putExtra(VideoPlayerActivity.EXTRA_START_POSITION, startPositionMs)
         }
         context.startActivity(intent)
@@ -67,7 +70,7 @@ class MediaItemActionHandler(
         val selectedIndex = finalQueue.indexOfFirst { it.streamUrl == selectedCard.streamUrl }
             .coerceAtLeast(0)
 
-        val urls = ArrayList(finalQueue.map { it.streamUrl })
+        val urls = ArrayList(finalQueue.map { ExternalPlayerHelper.sanitizeStreamUrl(it.streamUrl) })
         val titles = ArrayList(finalQueue.map { it.title })
         val subtitles = ArrayList(finalQueue.map { it.subtitle })
 
@@ -86,7 +89,7 @@ class MediaItemActionHandler(
         val selectedIndex = finalQueue.indexOfFirst { it.streamUrl == selectedCard.streamUrl }
             .coerceAtLeast(0)
 
-        val urls = ArrayList(finalQueue.map { it.streamUrl })
+        val urls = ArrayList(finalQueue.map { ExternalPlayerHelper.sanitizeStreamUrl(it.streamUrl) })
         val titles = ArrayList(finalQueue.map { it.title })
 
         val intent = Intent(context, PhotoSlideshowActivity::class.java).apply {

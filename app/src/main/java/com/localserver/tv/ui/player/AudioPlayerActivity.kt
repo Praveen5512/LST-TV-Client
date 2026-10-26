@@ -87,6 +87,12 @@ class AudioPlayerActivity : AppCompatActivity() {
         binding.btnPrevious.setOnClickListener {
             playPreviousTrack()
         }
+        binding.btnExternal.setOnClickListener {
+            val currentUrl = urlList.getOrNull(currentIndex) ?: return@setOnClickListener
+            val currentTitle = titleList.getOrNull(currentIndex) ?: "Audio Track"
+            player?.pause()
+            ExternalPlayerHelper.openWithExternalApp(this, currentUrl, currentTitle, "audio/*")
+        }
         binding.btnPlayPause.requestFocus()
     }
 

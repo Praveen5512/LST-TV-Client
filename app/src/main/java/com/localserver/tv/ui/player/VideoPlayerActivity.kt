@@ -34,6 +34,7 @@ class VideoPlayerActivity : AppCompatActivity() {
     private var streamUrl: String = ""
     private var videoTitle: String = ""
     private var videoSubtitle: String = ""
+    private var mimeType: String = "video/*"
     private var startPositionMs: Long = 0L
 
     private val handler = Handler(Looper.getMainLooper())
@@ -58,10 +59,17 @@ class VideoPlayerActivity : AppCompatActivity() {
         streamUrl = intent.getStringExtra(EXTRA_STREAM_URL) ?: ""
         videoTitle = intent.getStringExtra(EXTRA_TITLE) ?: "Video Playback"
         videoSubtitle = intent.getStringExtra(EXTRA_SUBTITLE) ?: ""
+        mimeType = intent.getStringExtra(EXTRA_MIME_TYPE) ?: "video/*"
         startPositionMs = intent.getLongExtra(EXTRA_START_POSITION, 0L)
 
         binding.tvVideoTitle.text = videoTitle
         binding.tvVideoMeta.text = if (videoSubtitle.isNotEmpty()) videoSubtitle else "Direct HTTP 206 Streaming"
+
+        binding.btnExternalPlayer.setOnClickListener {
+            player?.pause()
+            player?.currentPosition?.let { pos -> saveBookmark(pos, player?.duration ?: 0L) }
+            ExternalPlayerHelper.openWithExternalApp(this, streamUrl, videoTitle, mimeType)
+        }
 
         initializePlayer()
         scheduleHideHud()
@@ -124,11 +132,17 @@ class VideoPlayerActivity : AppCompatActivity() {
 
                     override fun onPlayerError(error: PlaybackException) {
                         binding.bufferingOverlay.visibility = View.GONE
-                        Toast.makeText(
-                            this@VideoPlayerActivity,
-                            "Stream error: ${error.message ?: "Connection lost"}",
-                            Toast.LENGTH_LONG
-                        ).show()
+                        AlertDialog.Builder(this@VideoPlayerActivity, R.style.Theme_TvDialog)
+                            .setTitle("Playback Unsupported")
+                            .setMessage("This video codec may not be supported by your TV's built-in player (${error.errorCodeName}).\n\nWould you like to play it with an external player like VLC?")
+                            .setPositiveButton("Open with VLC / Other App") { _, _ ->
+                                ExternalPlayerHelper.openWithExternalApp(this@VideoPlayerActivity, streamUrl, videoTitle, mimeType)
+                                finish()
+                            }
+                            .setNegativeButton(R.string.btn_cancel) { _, _ ->
+                                finish()
+                            }
+                            .show()
                     }
                 })
             }
@@ -357,6 +371,7 @@ class VideoPlayerActivity : AppCompatActivity() {
         const val EXTRA_STREAM_URL = "extra_stream_url"
         const val EXTRA_TITLE = "extra_title"
         const val EXTRA_SUBTITLE = "extra_subtitle"
+        const val EXTRA_MIME_TYPE = "extra_mime_type"
         const val EXTRA_SHARE_ID = "extra_share_id"
         const val EXTRA_FILE_PATH = "extra_file_path"
         const val EXTRA_START_POSITION = "extra_start_position"

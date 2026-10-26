@@ -18,6 +18,28 @@
         android:name="android.hardware.microphone"
         android:required="false" />
 
+    <!-- Queries for External Media Players (VLC, MX Player, Just Player, Nova, Kodi, etc.) -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="video/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="audio/*" />
+        </intent>
+        <package android:name="org.videolan.vlc" />
+        <package android:name="org.courville.nova" />
+        <package android:name="com.brouken.player" />
+        <package android:name="com.mxtech.videoplayer.ad" />
+        <package android:name="com.mxtech.videoplayer.pro" />
+        <package android:name="org.xbmc.kodi" />
+    </queries>
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="560dp"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_dialog_rounded"
+    android:orientation="vertical"
+    android:padding="28dp">
+
+    <!-- Title & Format -->
+    <TextView
+        android:id="@+id/tvMediaTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:text="Saripodhaa.Sanivaaram.2024.720p.mkv"
+        android:textColor="@color/tv_text_primary"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvMediaSubtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="1.34 GB • video/x-matroska • Movies"
+        android:textColor="@color/tv_text_secondary"
+        android:textSize="14sp" />
+
+    <!-- Action Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="22dp"
+        android:orientation="vertical">
+
+        <!-- Resume Button (Visible only when bookmark > 0) -->
+        <Button
+            android:id="@+id/btnResume"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/selector_tv_button"
+            android:focusable="true"
+            android:text="Resume from 00:00"
+            android:textColor="@color/tv_accent"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <!-- Play in Built-in Player -->
+        <Button
+            android:id="@+id/btnPlayBuiltin"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/selector_tv_button"
+            android:focusable="true"
+            android:text="▶  Play in Built-in Player"
+            android:textColor="@color/tv_text_primary"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <!-- Open with External App (VLC / MX Player) -->
+        <Button
+            android:id="@+id/btnOpenExternal"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/selector_tv_button"
+            android:focusable="true"
+            android:text="↗  Open with Other Apps (VLC, Nova, etc.)"
+            android:textColor="@color/tv_accent"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <!-- Cancel -->
+        <Button
+            android:id="@+id/btnCancelAction"
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
+            android:background="@drawable/selector_tv_button"
+            android:focusable="true"
+            android:text="@string/btn_cancel"
+            android:textColor="@color/tv_text_secondary"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+</LinearLayout>
