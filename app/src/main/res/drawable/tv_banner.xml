@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+
+    <!-- Deep Blue Gradient Base -->
+    <path
+        android:pathData="M0,0h320v180h-320z"
+        android:fillColor="#0A0F1D" />
+
+    <!-- Accent Geometric Ambient Glow -->
+    <path
+        android:pathData="M0,0 L320,0 L320,60 L0,120 Z"
+        android:fillColor="#162544" />
+
+    <path
+        android:pathData="M180,0 L320,0 L320,180 L120,180 Z"
+        android:fillColor="#0E1A33" />
+
+    <!-- TV Display Screen Outline -->
+    <path
+        android:pathData="M48,42 h68 c4.4,0 8,3.6 8,8 v44 c0,4.4 -3.6,8 -8,8 h-68 c-4.4,0 -8,-3.6 -8,-8 v-44 c0,-4.4 3.6,-8 8,-8 z"
+        android:fillColor="#1E293B"
+        android:strokeColor="#38BDF8"
+        android:strokeWidth="3" />
+
+    <!-- TV Stand -->
+    <path
+        android:pathData="M76,102 v12 m-18,0 h36"
+        android:strokeColor="#38BDF8"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+
+    <!-- Play Symbol inside TV screen -->
+    <path
+        android:pathData="M78,63 L89,72 L78,81 Z"
+        android:fillColor="#38BDF8" />
+
+    <!-- Wi-Fi / Streaming Broadcast Waves -->
+    <path
+        android:pathData="M140,54 a24,24 0 0 1 20,0"
+        android:strokeColor="#818CF8"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M136,46 a36,36 0 0 1 28,0"
+        android:strokeColor="#38BDF8"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round" />
+
+    <!-- Text Decorative Lines for Branding -->
+    <!-- "LOCAL MEDIA" Horizontal Bar -->
+    <path
+        android:pathData="M136,70 h140 v6 h-140 z"
+        android:fillColor="#F8FAFC" />
+
+    <!-- "TV CLIENT" Secondary Bar -->
+    <path
+        android:pathData="M136,84 h90 v4 h-90 z"
+        android:fillColor="#38BDF8" />
+
+    <path
+        android:pathData="M136,94 h60 v3 h-60 z"
+        android:fillColor="#94A3B8" />
+
+    <!-- Bottom Accent Border -->
+    <path
+        android:pathData="M0,176 h320 v4 h-320 z"
+        android:fillColor="#38BDF8" />
+</vector>

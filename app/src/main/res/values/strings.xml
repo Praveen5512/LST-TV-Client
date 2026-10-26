@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Local Media TV</string>
+    <string name="browse_title">Local Media Server</string>
+    <string name="category_recent">Continue Watching</string>
+    <string name="category_videos">All Videos</string>
+    <string name="category_audio">Music &amp; Audio</string>
+    <string name="category_photos">Photos &amp; Wallpapers</string>
+    <string name="category_shares">Folders &amp; Shares</string>
+    <string name="category_settings">Server &amp; Settings</string>
+
+    <!-- Connect Dialog Strings -->
+    <string name="server_select_title">Select Media Server</string>
+    <string name="server_searching">Searching local Wi-Fi for media servers…</string>
+    <string name="no_servers_found">No servers discovered automatically.</string>
+    <string name="manual_connect">Enter Server IP Manually</string>
+    <string name="manual_ip_title">Connect to Server IP</string>
+    <string name="manual_ip_hint">192.168.1.xxx:8080</string>
+    <string name="btn_connect">Connect</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_rescan">Rescan Network</string>
+    <string name="server_status_online">Online</string>
+    <string name="switch_server">Switch Server</string>
+    <string name="current_server">Connected Server: %1$s</string>
+
+    <!-- Video Playback -->
+    <string name="resume_title">Resume Playback?</string>
+    <string name="resume_from">Resume from %1$s</string>
+    <string name="start_beginning">Start from Beginning</string>
+    <string name="fast_forward_10">+10s</string>
+    <string name="rewind_10">-10s</string>
+    <string name="audio_track">Audio Track</string>
+    <string name="subtitles">Subtitles</string>
+    <string name="error_stream_failed">Failed to stream media. Check server connection.</string>
+
+    <!-- Audio Player -->
+    <string name="now_playing">Now Playing</string>
+    <string name="audio_queue">Folder Queue</string>
+    <string name="unknown_artist">Local Audio</string>
+
+    <!-- Photos -->
+    <string name="photo_slideshow_pause">Pause Slideshow</string>
+    <string name="photo_slideshow_play">Play Slideshow (5s)</string>
+</resources>

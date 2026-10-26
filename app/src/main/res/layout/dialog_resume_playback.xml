@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="520dp"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_dialog_rounded"
+    android:orientation="vertical"
+    android:padding="28dp">
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tvResumeTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/resume_title"
+        android:textColor="@color/tv_text_primary"
+        android:textSize="22sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvVideoName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="Interstellar.2014.1080p.mkv"
+        android:textColor="@color/tv_text_secondary"
+        android:textSize="15sp" />
+
+    <!-- Action Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="22dp"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/btnResume"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/selector_tv_button"
+            android:focusable="true"
+            android:text="Resume from 00:00"
+            android:textColor="@color/tv_accent"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnStartBeginning"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/selector_tv_button"
+            android:focusable="true"
+            android:text="@string/start_beginning"
+            android:textColor="@color/tv_text_primary"
+            android:textSize="15sp" />
+
+        <Button
+            android:id="@+id/btnCancelResume"
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
+            android:background="@drawable/selector_tv_button"
+            android:focusable="true"
+            android:text="@string/btn_cancel"
+            android:textColor="@color/tv_text_secondary"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+</LinearLayout>

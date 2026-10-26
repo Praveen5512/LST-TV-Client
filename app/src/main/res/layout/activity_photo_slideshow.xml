@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/photoRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
+    android:keepScreenOn="true">
+
+    <!-- Primary Photo ImageView with crossfade -->
+    <ImageView
+        android:id="@+id/ivPhotoDisplay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:adjustViewBounds="true"
+        android:contentDescription="Fullscreen Photo"
+        android:scaleType="fitCenter" />
+
+    <!-- Buffering Progress -->
+    <ProgressBar
+        android:id="@+id/pbPhotoLoading"
+        android:layout_width="54dp"
+        android:layout_height="54dp"
+        android:layout_gravity="center"
+        android:indeterminateTint="@color/tv_accent"
+        android:visibility="gone" />
+
+    <!-- Subtle Floating Bottom Scrim & Info (Auto-hides) -->
+    <LinearLayout
+        android:id="@+id/photoOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@drawable/bg_video_hud_gradient"
+        android:orientation="horizontal"
+        android:paddingStart="36dp"
+        android:paddingTop="20dp"
+        android:paddingEnd="36dp"
+        android:paddingBottom="24dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvPhotoTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Wallpaper_01.jpg"
+                android:textColor="@color/tv_text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvPhotoStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Slideshow (5s) • [OK] Toggle • [Left/Right] Browse"
+                android:textColor="@color/tv_accent"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvPhotoCounter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:text="1 / 1"
+            android:textColor="@color/tv_text_secondary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+</FrameLayout>

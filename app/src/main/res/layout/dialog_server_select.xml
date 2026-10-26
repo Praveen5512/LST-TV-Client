@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="650dp"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_dialog_rounded"
+    android:orientation="vertical"
+    android:padding="28dp">
+
+    <!-- Header -->
+    <TextView
+        android:id="@+id/tvSelectTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/server_select_title"
+        android:textColor="@color/tv_text_primary"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvDiscoveryStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/server_searching"
+        android:textColor="@color/tv_accent"
+        android:textSize="14sp" />
+
+    <!-- Discovered & Recent Servers List -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvServers"
+        android:layout_width="match_parent"
+        android:layout_height="220dp"
+        android:layout_marginTop="16dp"
+        android:clipToPadding="false"
+        android:focusable="true"
+        android:scrollbars="vertical" />
+
+    <!-- Empty State -->
+    <TextView
+        android:id="@+id/tvEmptyMessage"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:gravity="center"
+        android:text="@string/no_servers_found"
+        android:textColor="@color/tv_text_muted"
+        android:textSize="15sp"
+        android:visibility="gone" />
+
+    <!-- Actions Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnManualIp"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1.2"
+            android:background="@drawable/selector_tv_button"
+            android:focusable="true"
+            android:text="@string/manual_connect"
+            android:textColor="@color/tv_accent"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnRescan"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:background="@drawable/selector_tv_button"
+            android:focusable="true"
+            android:text="@string/btn_rescan"
+            android:textColor="@color/tv_text_primary"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/btnDismiss"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="6dp"
+            android:layout_weight="0.8"
+            android:background="@drawable/selector_tv_button"
+            android:focusable="true"
+            android:text="@string/btn_cancel"
+            android:textColor="@color/tv_text_secondary"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+</LinearLayout>
