@@ -65,14 +65,22 @@ class MediaModelsTest {
 
     @Test
     fun testStreamUrlEncoding() {
-        val item = MediaItemDto(
-            name = "Special Movie (2024).mp4",
-            path = "Movies & Shows/Special Movie (2024).mp4"
+        val itemWithStreamUrl = MediaItemDto(
+            name = "Saripodhaa.Sanivaaram.2024.mkv",
+            streamUrl = "/api/shares/8049bbe7/files/Saripodhaa.Sanivaaram.2024.mkv/stream"
         )
-        val url = item.buildStreamUrl("http://192.168.1.10:8080/", "share_123")
-        assertTrue(url.startsWith("http://192.168.1.10:8080/api/stream?shareId=share_123&path="))
-        assertTrue(url.contains("Movies%20%26%20Shows%2FSpecial%20Movie%20(2024).mp4") ||
-                   url.contains("Movies") && url.contains("%20"))
+        val fullUrl = itemWithStreamUrl.buildStreamUrl("http://192.168.1.3:8080")
+        assertEquals(
+            "http://192.168.1.3:8080/api/shares/8049bbe7/files/Saripodhaa.Sanivaaram.2024.mkv/stream",
+            fullUrl
+        )
+
+        val fallbackItem = MediaItemDto(
+            name = "Special Movie.mp4",
+            path = "Special Movie.mp4"
+        )
+        val url = fallbackItem.buildStreamUrl("http://192.168.1.10:8080/", "share_123")
+        assertTrue(url.startsWith("http://192.168.1.10:8080/api/shares/share_123/files/"))
     }
 
     @Test
@@ -83,23 +91,32 @@ class MediaModelsTest {
     }
 
     @Test
-    fun testJsonDeserialization() {
-        val rawShares = """
+    fun testJsonDeserializationDirectArray() {
+        val serverArray = """
             [
-              {
-                "id": "share_3126f9",
-                "name": "Movies & Series",
-                "uri": "content://tree/primary:Movies",
-                "isAccessible": true
-              }
+                {
+                    "shareId": "8049bbe7",
+                    "shareName": "Movies",
+                    "fileId": "Saripodhaa.mkv",
+                    "name": "Saripodhaa.mkv",
+                    "size": 1340689877,
+                    "lastModified": 1792962487261,
+                    "mimeType": "video/x-matroska",
+                    "streamUrl": "/api/shares/8049bbe7/files/Saripodhaa.mkv/stream",
+                    "downloadUrl": "/api/shares/8049bbe7/files/Saripodhaa.mkv/download"
+                }
             ]
         """.trimIndent()
 
-        val shares = json.decodeFromString<List<ShareDto>>(rawShares)
-        assertEquals(1, shares.size)
-        assertEquals("share_3126f9", shares[0].id)
-        assertEquals("Movies & Series", shares[0].name)
+        val items = json.decodeFromString<List<MediaItemDto>>(serverArray)
+        assertEquals(1, items.size)
+        assertEquals("Saripodhaa.mkv", items[0].name)
+        assertTrue(items[0].isVideo)
+        assertEquals("http://192.168.1.3:8080/api/shares/8049bbe7/files/Saripodhaa.mkv/stream", items[0].buildStreamUrl("http://192.168.1.3:8080"))
+    }
 
+    @Test
+    fun testJsonDeserializationNestedObject() {
         val rawMedia = """
             {
               "shareId": "share_3126f9",

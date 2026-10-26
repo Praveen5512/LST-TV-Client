@@ -50,23 +50,75 @@ class MediaRepository(
      * Aggregates media files across available shares into structured categories for the TV browse view
      */
     suspend fun aggregateBrowseContent(baseUrl: String): Result<List<CategorySection>> = withContext(Dispatchers.IO) {
-        val sharesResult = client.getShares(baseUrl)
-        if (sharesResult.isFailure) {
-            return@withContext Result.failure(sharesResult.exceptionOrNull() ?: Exception("Failed to load shares"))
-        }
-
-        val shares = sharesResult.getOrNull().orEmpty()
         val allVideos = mutableListOf<MediaCardModel>()
         val allAudio = mutableListOf<MediaCardModel>()
         val allPhotos = mutableListOf<MediaCardModel>()
         val continueWatching = mutableListOf<MediaCardModel>()
         val folderItems = mutableListOf<MediaCardModel>()
 
+        // 1. Try aggregated /api/media first (fast single call)
+        val mediaResult = client.getAllMedia(baseUrl, "all")
+        val directItems = mediaResult.getOrNull().orEmpty()
+
+        if (directItems.isNotEmpty()) {
+            for (item in directItems) {
+                val streamUrl = item.buildStreamUrl(baseUrl)
+                val bookmark = preferences.getPlaybackBookmark(streamUrl)
+                val duration = preferences.getMediaDuration(streamUrl)
+
+                val card = MediaCardModel(
+                    title = item.name,
+                    subtitle = if (item.isDirectory) "Folder" else "${item.formattedSize} • ${item.shareName.ifEmpty { "Media" }}",
+                    mediaItem = item,
+                    shareId = item.shareId,
+                    shareName = item.shareName,
+                    streamUrl = streamUrl,
+                    resumePositionMs = bookmark,
+                    durationMs = duration
+                )
+
+                if (item.isDirectory) {
+                    folderItems.add(card)
+                } else if (item.isVideo) {
+                    allVideos.add(card)
+                    if (bookmark > 0) {
+                        continueWatching.add(card)
+                    }
+                } else if (item.isAudio) {
+                    allAudio.add(card)
+                } else if (item.isImage) {
+                    allPhotos.add(card)
+                }
+            }
+        }
+
+        // 2. Fetch shares to populate folder browsing and fallback if /api/media was empty
+        val sharesResult = client.getShares(baseUrl)
+        val shares = sharesResult.getOrNull().orEmpty()
+
         for (share in shares) {
-            val mediaResult = client.getMedia(baseUrl, share.id, "")
-            if (mediaResult.isSuccess) {
-                val list = mediaResult.getOrNull()?.items.orEmpty()
-                for (item in list) {
+            val shareCard = MediaCardModel(
+                title = share.name,
+                subtitle = "Share Folder",
+                mediaItem = MediaItemDto(
+                    name = share.name,
+                    path = "",
+                    shareId = share.id,
+                    shareName = share.name,
+                    isDirectory = true
+                ),
+                shareId = share.id,
+                shareName = share.name,
+                streamUrl = ""
+            )
+            if (folderItems.none { it.shareId == share.id && it.mediaItem.path.isEmpty() }) {
+                folderItems.add(shareCard)
+            }
+
+            // Fallback: If /api/media didn't return files, fetch per share
+            if (directItems.isEmpty()) {
+                val shareMedia = client.getMedia(baseUrl, share.id, "").getOrNull()?.items.orEmpty()
+                for (item in shareMedia) {
                     val streamUrl = item.buildStreamUrl(baseUrl, share.id)
                     val bookmark = preferences.getPlaybackBookmark(streamUrl)
                     val duration = preferences.getMediaDuration(streamUrl)
@@ -101,7 +153,7 @@ class MediaRepository(
         val sections = mutableListOf<CategorySection>()
 
         if (continueWatching.isNotEmpty()) {
-            sections.add(CategorySection("recent", "Continue Watching", continueWatching))
+            sections.add(CategorySection("recent", "Continue Watching (${continueWatching.size})", continueWatching))
         }
 
         if (allVideos.isNotEmpty()) {
@@ -117,7 +169,7 @@ class MediaRepository(
         }
 
         if (folderItems.isNotEmpty()) {
-            sections.add(CategorySection("folders", "Folders & Directories", folderItems))
+            sections.add(CategorySection("folders", "Folders & Shares (${folderItems.size})", folderItems))
         }
 
         Result.success(sections)
