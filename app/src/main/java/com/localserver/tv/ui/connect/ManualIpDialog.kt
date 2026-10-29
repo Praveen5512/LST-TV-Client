@@ -19,7 +19,11 @@ class ManualIpDialog : DialogFragment() {
     private val binding get() = _binding!!
 
     private var onServerSelected: ((String) -> Unit)? = null
+    private var onConnectionSaved: ((oldUrl: String, newUrl: String) -> Unit)? = null
     private var client: MediaServerClient? = null
+
+    private var editingUrl: String? = null
+    private var editingName: String? = null
 
     private val inputBuilder = StringBuilder()
 
@@ -27,14 +31,30 @@ class ManualIpDialog : DialogFragment() {
         onServerSelected = listener
     }
 
+    fun setEditListener(listener: (oldUrl: String, newUrl: String) -> Unit) {
+        onConnectionSaved = listener
+    }
+
     fun setClient(mediaServerClient: MediaServerClient) {
         client = mediaServerClient
+    }
+
+    fun setEditTarget(existingUrl: String, existingName: String? = null) {
+        editingUrl = existingUrl
+        editingName = existingName
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = super.onCreateDialog(savedInstanceState)
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
         return dialog
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val displayWidth = resources.displayMetrics.widthPixels
+        val targetWidth = (displayWidth * 0.60).toInt().coerceIn(480, 680)
+        dialog?.window?.setLayout(targetWidth, ViewGroup.LayoutParams.WRAP_CONTENT)
     }
 
     override fun onCreateView(
@@ -48,15 +68,33 @@ class ManualIpDialog : DialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Initialize input if in edit mode
+        editingUrl?.let { url ->
+            val clean = url.removePrefix("http://").removePrefix("https://").trimEnd('/')
+            inputBuilder.setLength(0)
+            inputBuilder.append(clean)
+            binding.tvTitle.text = getString(R.string.edit_connection_title)
+            binding.tvSubtitle.text = getString(R.string.edit_connection_subtitle)
+            binding.btnConnect.text = getString(R.string.btn_save)
+        } ?: run {
+            binding.tvTitle.text = getString(R.string.manual_ip_title)
+            binding.tvSubtitle.text = "Enter the IP address shown on your server phone"
+            binding.btnConnect.text = getString(R.string.btn_connect)
+        }
+
         setupKeypad()
         updateDisplay()
 
-        // Set initial focus on quick prefix button for D-pad remote convenience
-        binding.btnQuickPrefix.requestFocus()
+        // Set initial focus: if in edit mode, focus on Connect/Save or Backspace; if new, focus on prefix
+        if (editingUrl != null) {
+            binding.btnConnect.requestFocus()
+        } else {
+            binding.btnQuickPrefix.requestFocus()
+        }
     }
 
     private fun setupKeypad() {
-        // Digits
         val digitButtons = mapOf(
             binding.btn0 to "0",
             binding.btn1 to "1",
@@ -119,17 +157,24 @@ class ManualIpDialog : DialogFragment() {
             }
 
             val candidateUrl = MediaServerClient.normalizeUrl(raw)
+            val isEditMode = editingUrl != null
+
             binding.btnConnect.isEnabled = false
             binding.btnConnect.text = "Checking..."
 
             lifecycleScope.launch {
                 val isHealthy = client?.checkHealth(candidateUrl) ?: true
                 if (isHealthy) {
-                    onServerSelected?.invoke(candidateUrl)
+                    if (isEditMode) {
+                        onConnectionSaved?.invoke(editingUrl!!, candidateUrl)
+                        Toast.makeText(context, R.string.connection_updated, Toast.LENGTH_SHORT).show()
+                    } else {
+                        onServerSelected?.invoke(candidateUrl)
+                    }
                     dismiss()
                 } else {
                     binding.btnConnect.isEnabled = true
-                    binding.btnConnect.text = getString(R.string.btn_connect)
+                    binding.btnConnect.text = if (isEditMode) getString(R.string.btn_save) else getString(R.string.btn_connect)
                     Toast.makeText(
                         context,
                         "Cannot reach server at $candidateUrl. Check Wi-Fi and port.",
@@ -157,6 +202,13 @@ class ManualIpDialog : DialogFragment() {
 
     companion object {
         const val TAG = "ManualIpDialog"
+
         fun newInstance(): ManualIpDialog = ManualIpDialog()
+
+        fun newEditInstance(existingUrl: String, existingName: String? = null): ManualIpDialog {
+            val dialog = ManualIpDialog()
+            dialog.setEditTarget(existingUrl, existingName)
+            return dialog
+        }
     }
 }

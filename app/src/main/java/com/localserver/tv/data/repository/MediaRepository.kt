@@ -152,6 +152,10 @@ class MediaRepository(
 
         val sections = mutableListOf<CategorySection>()
 
+        if (folderItems.isNotEmpty()) {
+            sections.add(CategorySection("folders", "Folders & Shares (${folderItems.size})", folderItems))
+        }
+
         if (continueWatching.isNotEmpty()) {
             sections.add(CategorySection("recent", "Continue Watching (${continueWatching.size})", continueWatching))
         }
@@ -166,10 +170,6 @@ class MediaRepository(
 
         if (allPhotos.isNotEmpty()) {
             sections.add(CategorySection("photos", "Photos & Wallpapers (${allPhotos.size})", allPhotos))
-        }
-
-        if (folderItems.isNotEmpty()) {
-            sections.add(CategorySection("folders", "Folders & Shares (${folderItems.size})", folderItems))
         }
 
         Result.success(sections)

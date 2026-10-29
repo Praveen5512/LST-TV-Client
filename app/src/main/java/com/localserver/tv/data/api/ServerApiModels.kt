@@ -34,7 +34,11 @@ data class MediaItemDto(
         get() = fileId.ifEmpty { id.ifEmpty { name } }
 
     val effectivePath: String
-        get() = path.ifEmpty { relativePath.ifEmpty { name } }
+        get() {
+            if (path.isNotEmpty()) return path
+            if (relativePath.isNotEmpty()) return relativePath
+            return if (isDirectory) "" else name
+        }
 
     val isVideo: Boolean
         get() {

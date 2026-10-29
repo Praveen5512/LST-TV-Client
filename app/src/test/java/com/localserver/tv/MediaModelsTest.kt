@@ -61,6 +61,23 @@ class MediaModelsTest {
         assertFalse(dirItem.isAudio)
         assertFalse(dirItem.isImage)
         assertEquals("", dirItem.formattedSize)
+        assertEquals("Movies/Action", dirItem.effectivePath)
+
+        val rootShareDir = MediaItemDto(
+            name = "Movies & Series",
+            path = "",
+            relativePath = "",
+            isDirectory = true
+        )
+        assertEquals("", rootShareDir.effectivePath)
+
+        val fileItem = MediaItemDto(
+            name = "Avatar.mkv",
+            path = "",
+            relativePath = "",
+            isDirectory = false
+        )
+        assertEquals("Avatar.mkv", fileItem.effectivePath)
     }
 
     @Test

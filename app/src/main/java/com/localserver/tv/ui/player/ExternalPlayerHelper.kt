@@ -88,18 +88,39 @@ object ExternalPlayerHelper {
 
     fun getInstalledPlayers(context: Context): List<ExternalAppInfo> {
         val pm = context.packageManager
-        val installed = mutableListOf<ExternalAppInfo>()
+        val installedMap = linkedMapOf<String, ExternalAppInfo>()
+
+        // 1. Check known video players first (for preferred ordering)
         for ((pkg, name) in KNOWN_PLAYER_PACKAGES) {
             try {
                 val appInfo = pm.getApplicationInfo(pkg, 0)
                 val label = pm.getApplicationLabel(appInfo).toString()
                 val icon = pm.getApplicationIcon(appInfo)
-                installed.add(ExternalAppInfo(pkg, label.ifEmpty { name }, icon))
+                installedMap[pkg] = ExternalAppInfo(pkg, label.ifEmpty { name }, icon)
             } catch (_: PackageManager.NameNotFoundException) {
                 // Not installed
             }
         }
-        return installed
+
+        // 2. Query system for all apps handling video intent
+        try {
+            val testIntent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(Uri.parse("http://127.0.0.1:8080/test.mp4"), "video/*")
+            }
+            val matches = pm.queryIntentActivities(testIntent, 0)
+            for (resolveInfo in matches) {
+                val pkg = resolveInfo.activityInfo.packageName
+                if (pkg != context.packageName && !installedMap.containsKey(pkg)) {
+                    val label = resolveInfo.loadLabel(pm).toString()
+                    val icon = resolveInfo.loadIcon(pm)
+                    installedMap[pkg] = ExternalAppInfo(pkg, label, icon)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error querying system video players", e)
+        }
+
+        return installedMap.values.toList()
     }
 
     fun openWithSpecificPlayer(

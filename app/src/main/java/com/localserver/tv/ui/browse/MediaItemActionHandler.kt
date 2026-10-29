@@ -4,29 +4,85 @@ import android.content.Context
 import android.content.Intent
 import androidx.fragment.app.FragmentManager
 import com.localserver.tv.data.repository.MediaCardModel
+import com.localserver.tv.data.repository.ServerPreferences
 import com.localserver.tv.ui.photo.PhotoSlideshowActivity
 import com.localserver.tv.ui.player.AudioPlayerActivity
 import com.localserver.tv.ui.player.ExternalPlayerHelper
 import com.localserver.tv.ui.player.MediaActionDialog
 import com.localserver.tv.ui.player.VideoPlayerActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MediaItemActionHandler(
     private val context: Context,
     private val fragmentManager: FragmentManager,
-    private val onFolderSelected: (shareId: String, folderPath: String) -> Unit
+    private val preferences: ServerPreferences = ServerPreferences(context),
+    private val onFolderBackSelected: () -> Unit = {},
+    private val onFolderSelected: (shareId: String, folderPath: String, folderTitle: String) -> Unit = { _, _, _ -> }
 ) {
+
+    constructor(
+        context: Context,
+        fragmentManager: FragmentManager,
+        preferences: ServerPreferences = ServerPreferences(context),
+        onFolderSelected: (shareId: String, folderPath: String) -> Unit
+    ) : this(
+        context = context,
+        fragmentManager = fragmentManager,
+        preferences = preferences,
+        onFolderBackSelected = {},
+        onFolderSelected = { sid, path, _ -> onFolderSelected(sid, path) }
+    )
 
     fun handleItemClicked(
         card: MediaCardModel,
-        siblingItems: List<MediaCardModel> = emptyList()
+        siblingItems: List<MediaCardModel> = emptyList(),
+        forceDialog: Boolean = false
     ) {
         val media = card.mediaItem
+        if (media.id == "__BACK__" || card.title.startsWith("⬅")) {
+            onFolderBackSelected()
+            return
+        }
         when {
             media.isDirectory -> {
-                onFolderSelected(card.shareId, media.effectivePath)
+                onFolderSelected(card.shareId, media.effectivePath, card.title)
             }
             media.isVideo -> {
-                showVideoActionDialog(card)
+                if (forceDialog) {
+                    showVideoActionDialog(card)
+                } else {
+                    CoroutineScope(Dispatchers.Main).launch {
+                        if (preferences.isExternalPlayerDefault()) {
+                            val pkg = preferences.getDefaultExternalPackage()
+                            val appName = preferences.getDefaultExternalAppName() ?: "External Player"
+                            if (!pkg.isNullOrEmpty()) {
+                                ExternalPlayerHelper.openWithSpecificPlayer(
+                                    context,
+                                    pkg,
+                                    card.streamUrl,
+                                    card.title,
+                                    card.mediaItem.mimeType
+                                )
+                            } else {
+                                ExternalPlayerHelper.openWithExternalApp(
+                                    context,
+                                    card.streamUrl,
+                                    card.title,
+                                    card.mediaItem.mimeType
+                                )
+                            }
+                            android.widget.Toast.makeText(
+                                context,
+                                "Playing in $appName (Hold OK to change default)",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            showVideoActionDialog(card)
+                        }
+                    }
+                }
             }
             media.isAudio -> {
                 playAudio(card, siblingItems)
@@ -37,7 +93,7 @@ class MediaItemActionHandler(
         }
     }
 
-    private fun showVideoActionDialog(card: MediaCardModel) {
+    fun showVideoActionDialog(card: MediaCardModel) {
         val bookmark = card.resumePositionMs
         val dialog = MediaActionDialog.newInstance(
             title = card.title,

@@ -1,6 +1,385 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/main_browse_fragment"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/tv_bg_default" />
+    android:background="@color/tv_bg_default">
+
+    <!-- 1. Ambient Hero Backdrop (Full Screen) -->
+    <ImageView
+        android:id="@+id/ivHeroBackdrop"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="Ambient Backdrop"
+        android:scaleType="centerCrop"
+        android:src="@drawable/bg_default_cinema" />
+
+    <!-- 2. Dark Vignette Scrim Overlay -->
+    <View
+        android:id="@+id/vHeroOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_hero_gradient" />
+
+    <!-- 3. Left Navigation Rail (72dp wide) -->
+    <LinearLayout
+        android:id="@+id/navRail"
+        android:layout_width="74dp"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_nav_rail"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingTop="20dp"
+        android:paddingBottom="20dp">
+
+        <!-- App Logo Icon -->
+        <ImageView
+            android:id="@+id/ivNavLogo"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginBottom="28dp"
+            android:contentDescription="App Logo"
+            android:src="@drawable/ic_nav_logo" />
+
+        <!-- Home Tab -->
+        <FrameLayout
+            android:id="@+id/btnNavHome"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="14dp"
+            android:background="@drawable/selector_nav_item"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:contentDescription="Home"
+                android:src="@drawable/ic_nav_home" />
+        </FrameLayout>
+
+        <!-- Folders Tab -->
+        <FrameLayout
+            android:id="@+id/btnNavFolders"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="14dp"
+            android:background="@drawable/selector_nav_item"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:contentDescription="Folders"
+                android:src="@drawable/ic_nav_folders" />
+        </FrameLayout>
+
+        <!-- Continue Watching Tab -->
+        <FrameLayout
+            android:id="@+id/btnNavContinue"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="14dp"
+            android:background="@drawable/selector_nav_item"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:contentDescription="Continue Watching"
+                android:src="@drawable/ic_nav_play" />
+        </FrameLayout>
+
+        <!-- Movies & Series Tab -->
+        <FrameLayout
+            android:id="@+id/btnNavMovies"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="14dp"
+            android:background="@drawable/selector_nav_item"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:contentDescription="Movies"
+                android:src="@drawable/ic_nav_movies" />
+        </FrameLayout>
+
+        <!-- Music Tab -->
+        <FrameLayout
+            android:id="@+id/btnNavMusic"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="14dp"
+            android:background="@drawable/selector_nav_item"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:contentDescription="Music"
+                android:src="@drawable/ic_nav_music" />
+        </FrameLayout>
+
+        <!-- Spacer to push settings to bottom -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Settings Tab -->
+        <FrameLayout
+            android:id="@+id/btnNavSettings"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/selector_nav_item"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:contentDescription="Settings"
+                android:src="@drawable/ic_nav_settings" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <!-- 4. Main Body (Right of Nav Rail) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginStart="86dp"
+        android:orientation="vertical">
+
+        <!-- Top Header Status Bar -->
+        <LinearLayout
+            android:id="@+id/topBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="24dp"
+            android:paddingTop="24dp"
+            android:paddingEnd="36dp"
+            android:paddingBottom="12dp">
+
+            <!-- Title -->
+            <TextView
+                android:id="@+id/tvAppTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:text="Local Media TV"
+                android:textColor="@color/tv_text_primary"
+                android:textSize="26sp"
+                android:textStyle="bold" />
+
+            <!-- Spacer -->
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <!-- Server Connection Status Capsule (Clickable/Focusable) -->
+            <LinearLayout
+                android:id="@+id/containerServerStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/selector_server_capsule"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="14dp"
+                android:paddingTop="7dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="7dp">
+
+                <!-- Online Green Dot -->
+                <ImageView
+                    android:id="@+id/ivServerDot"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:contentDescription="Server Dot"
+                    android:src="@drawable/ic_green_dot" />
+
+                <TextView
+                    android:id="@+id/tvServerStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Pixel 8 Pro • 192.168.1.154 (Connected)"
+                    android:textColor="#E2E8F0"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- Wi-Fi Icon -->
+            <ImageView
+                android:id="@+id/ivWifiStatus"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginStart="16dp"
+                android:contentDescription="Wi-Fi Signal"
+                android:src="@drawable/ic_wifi" />
+
+            <!-- Digital Clock -->
+            <TextView
+                android:id="@+id/tvClock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="01:59"
+                android:textColor="#E2E8F0"
+                android:textSize="16sp" />
+        </LinearLayout>
+
+        <!-- Vertical Scrolling Rows Container -->
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/scrollRows"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:fadeScrollbars="true"
+            android:fillViewport="true"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="40dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- 1. Folders & Shares Explorer Section (First!) -->
+                <LinearLayout
+                    android:id="@+id/layoutFolders"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="vertical"
+                    android:visibility="visible">
+
+                    <TextView
+                        android:id="@+id/tvHeaderFolders"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Folders &amp; Shares Explorer"
+                        android:textColor="@color/tv_text_primary"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <androidx.leanback.widget.HorizontalGridView
+                        android:id="@+id/hgvFolders"
+                        android:layout_width="match_parent"
+                        android:layout_height="275dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false" />
+                </LinearLayout>
+
+                <!-- 2. Continue Watching Section -->
+                <LinearLayout
+                    android:id="@+id/layoutContinueWatching"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="22dp"
+                    android:orientation="vertical"
+                    android:visibility="visible">
+
+                    <TextView
+                        android:id="@+id/tvHeaderContinueWatching"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Continue Watching"
+                        android:textColor="@color/tv_text_primary"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <androidx.leanback.widget.HorizontalGridView
+                        android:id="@+id/hgvContinueWatching"
+                        android:layout_width="match_parent"
+                        android:layout_height="205dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false" />
+                </LinearLayout>
+
+                <!-- 3. Local Shares & Movies Section -->
+                <LinearLayout
+                    android:id="@+id/layoutMovies"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="22dp"
+                    android:orientation="vertical"
+                    android:visibility="visible">
+
+                    <TextView
+                        android:id="@+id/tvHeaderMovies"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Local Shares &amp; Movies"
+                        android:textColor="@color/tv_text_primary"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <androidx.leanback.widget.HorizontalGridView
+                        android:id="@+id/hgvMovies"
+                        android:layout_width="match_parent"
+                        android:layout_height="275dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false" />
+                </LinearLayout>
+
+                <!-- 4. Music & Audio Section -->
+                <LinearLayout
+                    android:id="@+id/layoutMusic"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="22dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/tvHeaderMusic"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Music &amp; Audio"
+                        android:textColor="@color/tv_text_primary"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <androidx.leanback.widget.HorizontalGridView
+                        android:id="@+id/hgvMusic"
+                        android:layout_width="match_parent"
+                        android:layout_height="275dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+    </LinearLayout>
+
+</FrameLayout>

@@ -1,326 +1,314 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="600dp"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/bg_dialog_rounded"
     android:orientation="vertical"
-    android:padding="28dp">
+    android:padding="20dp">
 
     <!-- Title & Instructions -->
     <TextView
         android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
         android:text="@string/manual_ip_title"
         android:textColor="@color/tv_text_primary"
-        android:textSize="24sp"
+        android:textSize="18sp"
         android:textStyle="bold" />
 
     <TextView
         android:id="@+id/tvSubtitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="3dp"
         android:text="Enter the IP address shown on your server phone"
         android:textColor="@color/tv_text_secondary"
-        android:textSize="14sp" />
+        android:textSize="12sp" />
 
     <!-- Current Typed Address Box -->
     <TextView
         android:id="@+id/tvIpDisplay"
         android:layout_width="match_parent"
-        android:layout_height="54dp"
-        android:layout_marginTop="16dp"
+        android:layout_height="44dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="10dp"
         android:background="@drawable/bg_keypad_button_normal"
         android:gravity="center_vertical"
         android:hint="@string/manual_ip_hint"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
         android:textColor="@color/tv_accent"
         android:textColorHint="@color/tv_text_muted"
-        android:textSize="20sp"
+        android:textSize="17sp"
         android:textStyle="bold" />
 
-    <!-- Quick Shortcuts Row -->
+    <!-- Keypad Grid Row 1 (1, 2, 3, DEL) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/btnQuickPrefix"
-            android:layout_width="0dp"
-            android:layout_height="44dp"
-            android:layout_marginEnd="6dp"
-            android:layout_weight="1"
-            android:background="@drawable/selector_keypad_button"
-            android:focusable="true"
-            android:text="192.168."
-            android:textColor="@color/tv_text_primary"
-            android:textSize="14sp" />
-
-        <Button
-            android:id="@+id/btnQuickPort"
-            android:layout_width="0dp"
-            android:layout_height="44dp"
-            android:layout_marginStart="6dp"
-            android:layout_marginEnd="6dp"
-            android:layout_weight="1"
-            android:background="@drawable/selector_keypad_button"
-            android:focusable="true"
-            android:text=":8080"
-            android:textColor="@color/tv_text_primary"
-            android:textSize="14sp" />
-
-        <Button
-            android:id="@+id/btnClear"
-            android:layout_width="0dp"
-            android:layout_height="44dp"
-            android:layout_marginStart="6dp"
-            android:layout_weight="1"
-            android:background="@drawable/selector_keypad_button"
-            android:focusable="true"
-            android:text="CLEAR"
-            android:textColor="@color/tv_danger"
-            android:textSize="14sp" />
-    </LinearLayout>
-
-    <!-- Keypad Grid Row 1 (1 2 3) -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
         android:orientation="horizontal">
 
         <Button
             android:id="@+id/btn1"
             android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="6dp"
+            android:layout_height="40dp"
+            android:layout_margin="2dp"
             android:layout_weight="1"
             android:background="@drawable/selector_keypad_button"
             android:focusable="true"
             android:text="1"
             android:textColor="@color/tv_text_primary"
-            android:textSize="18sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <Button
             android:id="@+id/btn2"
             android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="6dp"
-            android:layout_marginEnd="6dp"
+            android:layout_height="40dp"
+            android:layout_margin="2dp"
             android:layout_weight="1"
             android:background="@drawable/selector_keypad_button"
             android:focusable="true"
             android:text="2"
             android:textColor="@color/tv_text_primary"
-            android:textSize="18sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <Button
             android:id="@+id/btn3"
             android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="6dp"
+            android:layout_height="40dp"
+            android:layout_margin="2dp"
             android:layout_weight="1"
             android:background="@drawable/selector_keypad_button"
             android:focusable="true"
             android:text="3"
             android:textColor="@color/tv_text_primary"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <!-- Keypad Grid Row 2 (4 5 6) -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/btn4"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="6dp"
-            android:layout_weight="1"
-            android:background="@drawable/selector_keypad_button"
-            android:focusable="true"
-            android:text="4"
-            android:textColor="@color/tv_text_primary"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btn5"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="6dp"
-            android:layout_marginEnd="6dp"
-            android:layout_weight="1"
-            android:background="@drawable/selector_keypad_button"
-            android:focusable="true"
-            android:text="5"
-            android:textColor="@color/tv_text_primary"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btn6"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="6dp"
-            android:layout_weight="1"
-            android:background="@drawable/selector_keypad_button"
-            android:focusable="true"
-            android:text="6"
-            android:textColor="@color/tv_text_primary"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <!-- Keypad Grid Row 3 (7 8 9) -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/btn7"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="6dp"
-            android:layout_weight="1"
-            android:background="@drawable/selector_keypad_button"
-            android:focusable="true"
-            android:text="7"
-            android:textColor="@color/tv_text_primary"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btn8"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="6dp"
-            android:layout_marginEnd="6dp"
-            android:layout_weight="1"
-            android:background="@drawable/selector_keypad_button"
-            android:focusable="true"
-            android:text="8"
-            android:textColor="@color/tv_text_primary"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btn9"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="6dp"
-            android:layout_weight="1"
-            android:background="@drawable/selector_keypad_button"
-            android:focusable="true"
-            android:text="9"
-            android:textColor="@color/tv_text_primary"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <!-- Keypad Grid Row 4 (. 0 : DEL) -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/btnDot"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="4dp"
-            android:layout_weight="1"
-            android:background="@drawable/selector_keypad_button"
-            android:focusable="true"
-            android:text="."
-            android:textColor="@color/tv_text_primary"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btn0"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="4dp"
-            android:layout_marginEnd="4dp"
-            android:layout_weight="1"
-            android:background="@drawable/selector_keypad_button"
-            android:focusable="true"
-            android:text="0"
-            android:textColor="@color/tv_text_primary"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btnColon"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="4dp"
-            android:layout_marginEnd="4dp"
-            android:layout_weight="1"
-            android:background="@drawable/selector_keypad_button"
-            android:focusable="true"
-            android:text=":"
-            android:textColor="@color/tv_text_primary"
-            android:textSize="18sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <ImageButton
             android:id="@+id/btnBackspace"
             android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="4dp"
+            android:layout_height="40dp"
+            android:layout_margin="2dp"
             android:layout_weight="1"
             android:background="@drawable/selector_keypad_button"
             android:contentDescription="Backspace"
             android:focusable="true"
+            android:padding="8dp"
             android:src="@drawable/ic_backspace" />
     </LinearLayout>
 
-    <!-- Actions Row (Cancel / Connect) -->
+    <!-- Keypad Grid Row 2 (4, 5, 6, CLEAR) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/btnCancel"
+            android:id="@+id/btn4"
             android:layout_width="0dp"
-            android:layout_height="50dp"
-            android:layout_marginEnd="8dp"
+            android:layout_height="40dp"
+            android:layout_margin="2dp"
             android:layout_weight="1"
-            android:background="@drawable/selector_tv_button"
+            android:background="@drawable/selector_keypad_button"
             android:focusable="true"
-            android:text="@string/btn_cancel"
-            android:textColor="@color/tv_text_secondary"
-            android:textSize="15sp" />
+            android:text="4"
+            android:textColor="@color/tv_text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btn5"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:background="@drawable/selector_keypad_button"
+            android:focusable="true"
+            android:text="5"
+            android:textColor="@color/tv_text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btn6"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:background="@drawable/selector_keypad_button"
+            android:focusable="true"
+            android:text="6"
+            android:textColor="@color/tv_text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnClear"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:background="@drawable/selector_danger_button"
+            android:focusable="true"
+            android:text="CLR"
+            android:textColor="@color/tv_danger"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Keypad Grid Row 3 (7, 8, 9, PORT :8080) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btn7"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:background="@drawable/selector_keypad_button"
+            android:focusable="true"
+            android:text="7"
+            android:textColor="@color/tv_text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btn8"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:background="@drawable/selector_keypad_button"
+            android:focusable="true"
+            android:text="8"
+            android:textColor="@color/tv_text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btn9"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:background="@drawable/selector_keypad_button"
+            android:focusable="true"
+            android:text="9"
+            android:textColor="@color/tv_text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnQuickPort"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:background="@drawable/selector_keypad_button"
+            android:focusable="true"
+            android:text=":8080"
+            android:textColor="@color/tv_accent"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Keypad Grid Row 4 (DOT ., 0, COLON :, 192.168.) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnDot"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:background="@drawable/selector_keypad_button"
+            android:focusable="true"
+            android:text="."
+            android:textColor="@color/tv_text_primary"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btn0"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:background="@drawable/selector_keypad_button"
+            android:focusable="true"
+            android:text="0"
+            android:textColor="@color/tv_text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnColon"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:background="@drawable/selector_keypad_button"
+            android:focusable="true"
+            android:text=":"
+            android:textColor="@color/tv_text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnQuickPrefix"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:background="@drawable/selector_keypad_button"
+            android:focusable="true"
+            android:text="192.168."
+            android:textColor="@color/tv_accent"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Actions (Connect & Cancel) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:orientation="horizontal">
 
         <Button
             android:id="@+id/btnConnect"
             android:layout_width="0dp"
-            android:layout_height="50dp"
-            android:layout_marginStart="8dp"
+            android:layout_height="40dp"
+            android:layout_margin="2dp"
             android:layout_weight="1"
             android:background="@drawable/selector_tv_button"
             android:focusable="true"
             android:text="@string/btn_connect"
             android:textColor="@color/tv_accent"
-            android:textSize="15sp"
+            android:textSize="12sp"
             android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnCancel"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:background="@drawable/selector_tv_button"
+            android:focusable="true"
+            android:text="@string/btn_cancel"
+            android:textColor="@color/tv_text_secondary"
+            android:textSize="12sp" />
     </LinearLayout>
 
 </LinearLayout>

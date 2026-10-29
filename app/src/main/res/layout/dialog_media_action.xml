@@ -1,50 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="560dp"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/bg_dialog_rounded"
     android:orientation="vertical"
-    android:padding="28dp">
+    android:padding="22dp">
 
     <!-- Title & Format -->
     <TextView
         android:id="@+id/tvMediaTitle"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ellipsize="end"
+        android:fontFamily="sans-serif-medium"
         android:maxLines="2"
-        android:text="Saripodhaa.Sanivaaram.2024.720p.mkv"
+        android:text="Media Title"
         android:textColor="@color/tv_text_primary"
-        android:textSize="20sp"
+        android:textSize="18sp"
         android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/tvMediaSubtitle"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:text="1.34 GB • video/x-matroska • Movies"
-        android:textColor="@color/tv_text_secondary"
-        android:textSize="14sp" />
+        android:layout_marginTop="4dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tvMediaSubtitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Media Details"
+            android:textColor="@color/tv_text_secondary"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/tvDefaultNotice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_badge_dolby"
+            android:paddingStart="8dp"
+            android:paddingTop="2dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="2dp"
+            android:text="★ Default: VLC"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </LinearLayout>
 
     <!-- Action Buttons -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="22dp"
+        android:layout_marginTop="16dp"
         android:orientation="vertical">
 
         <!-- Resume Button (Visible only when bookmark > 0) -->
         <Button
             android:id="@+id/btnResume"
             android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_marginBottom="10dp"
+            android:layout_height="44dp"
+            android:layout_marginBottom="8dp"
             android:background="@drawable/selector_tv_button"
             android:focusable="true"
             android:text="Resume from 00:00"
             android:textColor="@color/tv_accent"
-            android:textSize="15sp"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <!-- Direct Play with Default Player (Visible when external default is set) -->
+        <Button
+            android:id="@+id/btnPlayDefault"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/selector_tv_button"
+            android:focusable="true"
+            android:text="▶  Play in Default Player (VLC)"
+            android:textColor="@color/tv_accent"
+            android:textSize="13sp"
             android:textStyle="bold"
             android:visibility="gone" />
 
@@ -52,38 +92,51 @@
         <Button
             android:id="@+id/btnPlayBuiltin"
             android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_marginBottom="10dp"
+            android:layout_height="44dp"
+            android:layout_marginBottom="8dp"
             android:background="@drawable/selector_tv_button"
             android:focusable="true"
             android:text="▶  Play in Built-in Player"
             android:textColor="@color/tv_text_primary"
-            android:textSize="15sp"
+            android:textSize="13sp"
             android:textStyle="bold" />
 
-        <!-- Open with External App (VLC / MX Player) -->
+        <!-- Select Player & Set as Default -->
         <Button
-            android:id="@+id/btnOpenExternal"
+            android:id="@+id/btnChoosePlayer"
             android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_marginBottom="10dp"
+            android:layout_height="44dp"
+            android:layout_marginBottom="8dp"
             android:background="@drawable/selector_tv_button"
             android:focusable="true"
-            android:text="↗  Open with Other Apps (VLC, Nova, etc.)"
-            android:textColor="@color/tv_accent"
-            android:textSize="15sp"
-            android:textStyle="bold" />
+            android:text="↗  Select Player &amp; Set as Default..."
+            android:textColor="@color/tv_text_primary"
+            android:textSize="13sp" />
+
+        <!-- Reset Default Player (Visible only when default is set to external) -->
+        <Button
+            android:id="@+id/btnResetDefault"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/selector_tv_button"
+            android:focusable="true"
+            android:text="🔄  Reset Default (Use Built-in Player)"
+            android:textColor="#F59E0B"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
 
         <!-- Cancel -->
         <Button
             android:id="@+id/btnCancelAction"
             android:layout_width="match_parent"
-            android:layout_height="46dp"
+            android:layout_height="44dp"
             android:background="@drawable/selector_tv_button"
             android:focusable="true"
             android:text="@string/btn_cancel"
             android:textColor="@color/tv_text_secondary"
-            android:textSize="14sp" />
+            android:textSize="13sp" />
     </LinearLayout>
 
 </LinearLayout>

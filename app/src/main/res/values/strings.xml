@@ -41,4 +41,20 @@
     <!-- Photos -->
     <string name="photo_slideshow_pause">Pause Slideshow</string>
     <string name="photo_slideshow_play">Play Slideshow (5s)</string>
+    <!-- Edit & Delete Connection Strings -->
+    <string name="edit_connection_title">Edit Connection</string>
+    <string name="edit_connection_subtitle">Update server IP address and port</string>
+    <string name="delete_connection_title">Delete Connection</string>
+    <string name="delete_connection_confirm">Remove \"%1$s\" from saved connections?</string>
+    <string name="btn_edit">Edit</string>
+    <string name="btn_delete">Delete</string>
+    <string name="btn_save">Save Changes</string>
+    <string name="btn_save_and_connect">Save &amp; Connect</string>
+    <string name="server_status_saved">Saved</string>
+    <string name="server_status_active">Connected</string>
+    <string name="section_discovered">Discovered Servers</string>
+    <string name="section_saved">Saved Connections</string>
+    <string name="connection_deleted">Connection removed</string>
+    <string name="connection_updated">Connection updated</string>
+    <string name="btn_close">Close</string>
 </resources>

@@ -21,27 +21,27 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:text="Interstellar.2014.1080p.mkv"
+        android:text="Video Title"
         android:textColor="@color/tv_text_secondary"
-        android:textSize="15sp" />
+        android:textSize="14sp" />
 
     <!-- Action Buttons -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="22dp"
+        android:layout_marginTop="20dp"
         android:orientation="vertical">
 
         <Button
             android:id="@+id/btnResume"
             android:layout_width="match_parent"
-            android:layout_height="52dp"
+            android:layout_height="50dp"
             android:layout_marginBottom="10dp"
             android:background="@drawable/selector_tv_button"
             android:focusable="true"
             android:text="Resume from 00:00"
             android:textColor="@color/tv_accent"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
 
         <Button
@@ -58,12 +58,12 @@
         <Button
             android:id="@+id/btnCancelResume"
             android:layout_width="match_parent"
-            android:layout_height="46dp"
+            android:layout_height="50dp"
             android:background="@drawable/selector_tv_button"
             android:focusable="true"
             android:text="@string/btn_cancel"
             android:textColor="@color/tv_text_secondary"
-            android:textSize="14sp" />
+            android:textSize="15sp" />
     </LinearLayout>
 
 </LinearLayout>

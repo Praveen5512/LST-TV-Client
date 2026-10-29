@@ -61,7 +61,7 @@ class MainTvFragment : BrowseSupportFragment() {
         repository = MediaRepository(client, preferences)
         discoveryManager = TvNsdDiscoveryManager(ctx)
 
-        actionHandler = MediaItemActionHandler(ctx, parentFragmentManager) { shareId, folderPath ->
+        actionHandler = MediaItemActionHandler(ctx, parentFragmentManager, preferences) { shareId, folderPath ->
             loadFolderContents(shareId, folderPath)
         }
 
@@ -157,14 +157,9 @@ class MainTvFragment : BrowseSupportFragment() {
 
     private fun observeServerAndLoad() {
         lifecycleScope.launch {
-            val active = preferences.getActiveServer()
-            if (!active.isNullOrBlank()) {
-                currentServerUrl = active
-                title = "Local Media TV • $active"
-                loadMediaForServer(active)
-            } else {
-                // Start discovery and listen
-                discoveryManager.startDiscovery()
+            discoveryManager.startDiscovery()
+
+            launch {
                 discoveryManager.discoveredServers.collectLatest { list ->
                     if (list.isNotEmpty() && currentServerUrl == null) {
                         val first = list.first()
@@ -173,10 +168,27 @@ class MainTvFragment : BrowseSupportFragment() {
                         preferences.setActiveServer(url)
                         title = "Local Media TV • ${first.name}"
                         loadMediaForServer(url)
-                    } else if (list.isEmpty() && currentServerUrl == null) {
-                        showServerSelectDialog()
                     }
                 }
+            }
+
+            val active = preferences.getActiveServer()
+            if (!active.isNullOrBlank()) {
+                currentServerUrl = active
+                title = "Connecting • $active"
+                val result = repository.aggregateBrowseContent(active)
+                if (result.isSuccess) {
+                    val sections = result.getOrNull().orEmpty()
+                    title = "Local Media TV • $active"
+                    populateBrowseRows(sections)
+                } else {
+                    currentServerUrl = null
+                    title = "Server Offline • Searching Wi-Fi / Hotspot…"
+                    populateSettingsOnlyRows()
+                }
+            } else {
+                title = "Searching Wi-Fi / Hotspot for Servers…"
+                populateSettingsOnlyRows()
             }
         }
     }
@@ -187,14 +199,18 @@ class MainTvFragment : BrowseSupportFragment() {
             val result = repository.aggregateBrowseContent(baseUrl)
             if (result.isSuccess) {
                 val sections = result.getOrNull().orEmpty()
+                title = "Local Media TV • $baseUrl"
                 populateBrowseRows(sections)
             } else {
                 Toast.makeText(
                     context,
-                    "Failed to connect to $baseUrl. Check server status.",
+                    "Failed to connect to $baseUrl. Searching network…",
                     Toast.LENGTH_LONG
                 ).show()
+                currentServerUrl = null
+                title = "Server Offline • Searching Wi-Fi / Hotspot…"
                 populateSettingsOnlyRows()
+                discoveryManager.startDiscovery()
             }
         }
     }
@@ -319,6 +335,20 @@ class MainTvFragment : BrowseSupportFragment() {
                 loadMediaForServer(selectedUrl)
             }
         }
+        dialog.setOnDismissListener {
+            lifecycleScope.launch {
+                val active = preferences.getActiveServer()
+                if (active.isNullOrEmpty()) {
+                    currentServerUrl = null
+                    title = getString(R.string.browse_title)
+                    populateSettingsOnlyRows()
+                } else if (active != currentServerUrl) {
+                    currentServerUrl = active
+                    title = "Local Media TV • $active"
+                    loadMediaForServer(active)
+                }
+            }
+        }
         dialog.show(parentFragmentManager, ServerSelectDialog.TAG)
     }
 
@@ -347,10 +377,19 @@ class MainTvFragment : BrowseSupportFragment() {
 
     override fun onResume() {
         super.onResume()
-        currentServerUrl?.let {
-            // Reload on resume to update bookmarks
-            lifecycleScope.launch {
-                val result = repository.aggregateBrowseContent(it)
+        lifecycleScope.launch {
+            val active = preferences.getActiveServer()
+            if (active.isNullOrEmpty()) {
+                currentServerUrl = null
+                title = getString(R.string.browse_title)
+                populateSettingsOnlyRows()
+            } else if (active != currentServerUrl) {
+                currentServerUrl = active
+                title = "Local Media TV • $active"
+                loadMediaForServer(active)
+            } else {
+                // Reload on resume to update bookmarks
+                val result = repository.aggregateBrowseContent(active)
                 if (result.isSuccess) {
                     populateBrowseRows(result.getOrNull().orEmpty())
                 }
