@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     android:background="@drawable/bg_dialog_rounded"
     android:orientation="vertical"
-    android:padding="20dp">
+    android:padding="22dp">
 
     <!-- Header Row -->
     <LinearLayout
@@ -19,7 +19,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:fontFamily="sans-serif-medium"
-            android:text="Select Video Player"
+            android:text="Select External Player"
             android:textColor="@color/tv_text_primary"
             android:textSize="18sp"
             android:textStyle="bold" />
@@ -44,7 +44,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:text="Choose an installed player to play this video"
+        android:text="All media will play using your chosen external player"
         android:textColor="@color/tv_text_secondary"
         android:textSize="12sp" />
 
@@ -108,7 +108,7 @@
             android:layout_weight="1"
             android:background="@drawable/selector_tv_button"
             android:focusable="true"
-            android:text="Reset Default (Use Built-in)"
+            android:text="Clear Default Player"
             android:textColor="#F59E0B"
             android:textSize="12sp"
             android:textStyle="bold"

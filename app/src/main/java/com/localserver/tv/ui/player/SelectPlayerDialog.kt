@@ -31,9 +31,9 @@ class SelectPlayerDialog : DialogFragment() {
     private var mimeType: String = ""
     private var resumePositionMs: Long = 0L
 
-    private var onPlayInternal: ((startPosition: Long) -> Unit)? = null
+    private var onPlayerChangedListener: (() -> Unit)? = null
 
-    private var isSetAsDefaultChecked: Boolean = false
+    private var isSetAsDefaultChecked: Boolean = true
     private var currentDefaultPkg: String? = null
     private var isExternalDefault: Boolean = false
 
@@ -42,7 +42,6 @@ class SelectPlayerDialog : DialogFragment() {
         val displayName: String,
         val subtitle: String,
         val icon: Drawable?,
-        val isBuiltIn: Boolean = false,
         val isChooser: Boolean = false
     )
 
@@ -50,14 +49,16 @@ class SelectPlayerDialog : DialogFragment() {
         url: String,
         title: String,
         mime: String,
-        resumePos: Long,
-        onInternalPlay: (Long) -> Unit
+        resumePos: Long = 0L
     ) {
         streamUrl = url
         mediaTitle = title
         mimeType = mime
         resumePositionMs = resumePos
-        onPlayInternal = onInternalPlay
+    }
+
+    fun setOnPlayerChangedListener(listener: () -> Unit) {
+        onPlayerChangedListener = listener
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -97,8 +98,7 @@ class SelectPlayerDialog : DialogFragment() {
     }
 
     private fun setupCheckboxToggle() {
-        // Toggle the "Set as default" checkbox on click
-        isSetAsDefaultChecked = true // Default to true so user gets "set as default" when choosing
+        isSetAsDefaultChecked = true
         updateCheckboxUI()
 
         binding.containerSetAsDefault.setOnClickListener {
@@ -118,7 +118,7 @@ class SelectPlayerDialog : DialogFragment() {
             binding.ivCheckbox.setImageResource(R.drawable.ic_video)
             binding.ivCheckbox.setColorFilter(ContextCompat.getColor(requireContext(), R.color.tv_text_muted))
             binding.tvSetAsDefaultLabel.setTextColor(ContextCompat.getColor(requireContext(), R.color.tv_text_secondary))
-            binding.tvSetAsDefaultLabel.text = "Open this video once (Do not set as default)"
+            binding.tvSetAsDefaultLabel.text = "Open this media once (Do not set as default)"
         }
     }
 
@@ -126,7 +126,8 @@ class SelectPlayerDialog : DialogFragment() {
         binding.btnResetPlayerDefault.setOnClickListener {
             viewLifecycleOwner.lifecycleScope.launch {
                 preferences.resetDefaultPlayer()
-                Toast.makeText(requireContext(), "Default player reset to Built-in Player", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Default player cleared", Toast.LENGTH_SHORT).show()
+                onPlayerChangedListener?.invoke()
                 loadPlayersAndDefaults()
             }
         }
@@ -140,31 +141,20 @@ class SelectPlayerDialog : DialogFragment() {
             val defaultAppName = preferences.getDefaultExternalAppName()
 
             // Update top status tag
-            if (isExternalDefault) {
-                binding.tvCurrentDefaultTag.text = "Default: ${defaultAppName ?: currentDefaultPkg ?: "External"}"
+            if (isExternalDefault && (!currentDefaultPkg.isNullOrEmpty() || defaultAppName != null)) {
+                binding.tvCurrentDefaultTag.text = "Default: ${defaultAppName ?: currentDefaultPkg}"
                 binding.tvCurrentDefaultTag.visibility = View.VISIBLE
                 binding.btnResetPlayerDefault.visibility = View.VISIBLE
             } else {
-                binding.tvCurrentDefaultTag.text = "Default: Built-in Player"
+                binding.tvCurrentDefaultTag.text = "Default: None (Ask Each Time)"
                 binding.tvCurrentDefaultTag.visibility = View.VISIBLE
                 binding.btnResetPlayerDefault.visibility = View.GONE
             }
 
-            // Assemble player options list
+            // Assemble external player options ONLY (Zero built-in player options per Requirement 3)
             val playerList = mutableListOf<PlayerEntry>()
 
-            // 1. Built-in Player (ExoPlayer)
-            playerList.add(
-                PlayerEntry(
-                    packageName = "builtin",
-                    displayName = "Built-in Player (ExoPlayer)",
-                    subtitle = "Native hardware-accelerated TV player",
-                    icon = ContextCompat.getDrawable(ctx, R.drawable.ic_video),
-                    isBuiltIn = true
-                )
-            )
-
-            // 2. Discover installed external players (VLC, Nova, MX, Just Player, Kodi, etc.)
+            // 1. Discover installed external players (VLC, Nova, MX, Just Player, Kodi, etc.)
             val externalPlayers = ExternalPlayerHelper.getInstalledPlayers(ctx)
             for (app in externalPlayers) {
                 playerList.add(
@@ -177,12 +167,12 @@ class SelectPlayerDialog : DialogFragment() {
                 )
             }
 
-            // 3. System Chooser fallback
+            // 2. System Chooser fallback
             playerList.add(
                 PlayerEntry(
                     packageName = "chooser",
-                    displayName = "External App Chooser",
-                    subtitle = "Show system app picker every time",
+                    displayName = "System App Chooser",
+                    subtitle = "Show Android application picker",
                     icon = ContextCompat.getDrawable(ctx, R.drawable.ic_open_in_new),
                     isChooser = true
                 )
@@ -203,32 +193,22 @@ class SelectPlayerDialog : DialogFragment() {
             val ctx = requireContext()
 
             if (isSetAsDefaultChecked) {
-                when {
-                    entry.isBuiltIn -> {
-                        preferences.resetDefaultPlayer()
-                        Toast.makeText(ctx, "Built-in Player set as default", Toast.LENGTH_SHORT).show()
-                    }
-                    entry.isChooser -> {
-                        preferences.setExternalPlayerDefault(true, null, "External Chooser")
-                        Toast.makeText(ctx, "External Chooser set as default", Toast.LENGTH_SHORT).show()
-                    }
-                    else -> {
-                        // Single selected external player
-                        preferences.setExternalPlayerDefault(true, entry.packageName, entry.displayName)
-                        Toast.makeText(ctx, "${entry.displayName} set as default player", Toast.LENGTH_SHORT).show()
-                    }
+                if (entry.isChooser) {
+                    preferences.setExternalPlayerDefault(true, null, "System Chooser")
+                    Toast.makeText(ctx, "System Chooser set as default", Toast.LENGTH_SHORT).show()
+                } else {
+                    preferences.setExternalPlayerDefault(true, entry.packageName, entry.displayName)
+                    Toast.makeText(ctx, "${entry.displayName} set as default player", Toast.LENGTH_SHORT).show()
                 }
             }
 
-            // Launch playback
-            when {
-                entry.isBuiltIn -> {
-                    onPlayInternal?.invoke(resumePositionMs)
-                }
-                entry.isChooser -> {
+            onPlayerChangedListener?.invoke()
+
+            // Launch playback if a stream URL was provided
+            if (streamUrl.isNotEmpty()) {
+                if (entry.isChooser) {
                     ExternalPlayerHelper.openWithExternalApp(ctx, streamUrl, mediaTitle, mimeType)
-                }
-                else -> {
+                } else {
                     ExternalPlayerHelper.openWithSpecificPlayer(
                         ctx,
                         entry.packageName,
@@ -274,10 +254,10 @@ class SelectPlayerDialog : DialogFragment() {
             }
 
             // Check if this item is currently the default player
-            val isCurrentDefault = when {
-                item.isBuiltIn -> !isExternalDefault
-                item.isChooser -> isExternalDefault && currentDefaultPkg == null
-                else -> isExternalDefault && currentDefaultPkg == item.packageName
+            val isCurrentDefault = if (item.isChooser) {
+                isExternalDefault && currentDefaultPkg == null
+            } else {
+                isExternalDefault && currentDefaultPkg == item.packageName
             }
 
             if (isCurrentDefault) {
@@ -304,14 +284,13 @@ class SelectPlayerDialog : DialogFragment() {
         const val TAG = "SelectPlayerDialog"
 
         fun newInstance(
-            url: String,
-            title: String,
-            mime: String,
-            resumePos: Long,
-            onInternalPlay: (Long) -> Unit
+            url: String = "",
+            title: String = "",
+            mime: String = "video/*",
+            resumePos: Long = 0L
         ): SelectPlayerDialog {
             val d = SelectPlayerDialog()
-            d.setup(url, title, mime, resumePos, onInternalPlay)
+            d.setup(url, title, mime, resumePos)
             return d
         }
     }

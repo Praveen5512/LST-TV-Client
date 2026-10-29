@@ -118,18 +118,16 @@ class MediaActionDialog : DialogFragment() {
                 mediaTitle,
                 mimeType,
                 resumePositionMs
-            ) { startPos ->
-                onPlayInternal?.invoke(startPos)
-            }
+            )
             selectDialog.show(parentFragmentManager, SelectPlayerDialog.TAG)
             dismiss()
         }
 
-        // Reset Default Player back to Built-in
+        // Reset Default Player
         binding.btnResetDefault.setOnClickListener {
             viewLifecycleOwner.lifecycleScope.launch {
                 preferences.resetDefaultPlayer()
-                Toast.makeText(requireContext(), "Default player reset to Built-in Player", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Default player cleared", Toast.LENGTH_SHORT).show()
                 checkDefaultStatus()
             }
         }

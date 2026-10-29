@@ -1,4 +1,4 @@
-# LST TV Client — Android TV
+# LST TV Client — Android TV & Google TV Media Player
 
 [![Platform](https://img.shields.io/badge/Platform-Android%20TV%20%7C%20Google%20TV-3DDC84?logo=android&logoColor=white)](https://developer.android.com/tv)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.24-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
@@ -28,6 +28,10 @@ Built from the ground up for television remotes, LST TV Client delivers fluid D-
 ---
 
 ## User Interface & Features
+
+<p align="center">
+  <img src="assets/tv_showcase.jpg" alt="10-Foot Living Room TV Experience" width="100%" />
+</p>
 
 ### 1. 10-Foot Television Experience
 - **Navigation Rail**: Fast sidebar switching across **Home**, **Movies**, **Music**, **Folders & Shares**, and **Server Settings**.
@@ -239,7 +243,13 @@ adb devices
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Once installed, **LST TV Client** will appear directly in the **Apps** row on your Android TV / Google TV home screen with its official TV banner.
+Once installed, **LST TV Client** will appear directly in the **Apps** row on your Android TV / Google TV home screen with its official TV banner:
+
+<p align="center">
+  <img src="assets/tv_banner.png" alt="LST TV Client Leanback Banner" width="360" />
+  <br />
+  <em>Official 320x180 Leanback Launcher Banner</em>
+</p>
 
 ---
 

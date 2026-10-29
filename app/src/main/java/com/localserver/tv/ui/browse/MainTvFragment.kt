@@ -166,7 +166,7 @@ class MainTvFragment : BrowseSupportFragment() {
                         val url = first.baseUrl
                         currentServerUrl = url
                         preferences.setActiveServer(url)
-                        title = "Local Media TV • ${first.name}"
+                        title = "${getString(R.string.app_name)} • ${first.name}"
                         loadMediaForServer(url)
                     }
                 }
@@ -179,7 +179,7 @@ class MainTvFragment : BrowseSupportFragment() {
                 val result = repository.aggregateBrowseContent(active)
                 if (result.isSuccess) {
                     val sections = result.getOrNull().orEmpty()
-                    title = "Local Media TV • $active"
+                    title = "${getString(R.string.app_name)} • $active"
                     populateBrowseRows(sections)
                 } else {
                     currentServerUrl = null
@@ -199,7 +199,7 @@ class MainTvFragment : BrowseSupportFragment() {
             val result = repository.aggregateBrowseContent(baseUrl)
             if (result.isSuccess) {
                 val sections = result.getOrNull().orEmpty()
-                title = "Local Media TV • $baseUrl"
+                title = "${getString(R.string.app_name)} • $baseUrl"
                 populateBrowseRows(sections)
             } else {
                 Toast.makeText(
@@ -331,7 +331,7 @@ class MainTvFragment : BrowseSupportFragment() {
             currentServerUrl = selectedUrl
             lifecycleScope.launch {
                 preferences.setActiveServer(selectedUrl)
-                title = "Local Media TV • $selectedUrl"
+                title = "${getString(R.string.app_name)} • $selectedUrl"
                 loadMediaForServer(selectedUrl)
             }
         }
@@ -344,7 +344,7 @@ class MainTvFragment : BrowseSupportFragment() {
                     populateSettingsOnlyRows()
                 } else if (active != currentServerUrl) {
                     currentServerUrl = active
-                    title = "Local Media TV • $active"
+                    title = "${getString(R.string.app_name)} • $active"
                     loadMediaForServer(active)
                 }
             }
@@ -359,7 +359,7 @@ class MainTvFragment : BrowseSupportFragment() {
             currentServerUrl = url
             lifecycleScope.launch {
                 preferences.setActiveServer(url)
-                title = "Local Media TV • $url"
+                title = "${getString(R.string.app_name)} • $url"
                 loadMediaForServer(url)
             }
         }
@@ -385,7 +385,7 @@ class MainTvFragment : BrowseSupportFragment() {
                 populateSettingsOnlyRows()
             } else if (active != currentServerUrl) {
                 currentServerUrl = active
-                title = "Local Media TV • $active"
+                title = "${getString(R.string.app_name)} • $active"
                 loadMediaForServer(active)
             } else {
                 // Reload on resume to update bookmarks

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Local Media TV</string>
-    <string name="browse_title">Local Media Server</string>
+    <string name="app_name">LST TV Client</string>
+    <string name="browse_title">LST TV Client</string>
     <string name="category_recent">Continue Watching</string>
     <string name="category_videos">All Videos</string>
     <string name="category_audio">Music &amp; Audio</string>

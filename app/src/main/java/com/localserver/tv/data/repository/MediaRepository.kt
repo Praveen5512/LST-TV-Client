@@ -43,6 +43,8 @@ class MediaRepository(
 
     suspend fun getMediaDuration(mediaKey: String): Long = preferences.getMediaDuration(mediaKey)
 
+    suspend fun getAllBookmarksSnapshot(): Map<String, Long> = preferences.getAllBookmarksSnapshot()
+
     suspend fun savePlaybackBookmark(mediaKey: String, positionMs: Long, durationMs: Long) =
         preferences.savePlaybackBookmark(mediaKey, positionMs, durationMs)
 

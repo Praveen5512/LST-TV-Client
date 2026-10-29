@@ -183,6 +183,17 @@ class ServerPreferences(private val context: Context) {
         }
     }
 
+    suspend fun getAllBookmarksSnapshot(): Map<String, Long> {
+        val prefs = context.dataStore.data.firstOrNull() ?: return emptyMap()
+        val map = mutableMapOf<String, Long>()
+        for ((key, value) in prefs.asMap()) {
+            if (value is Long) {
+                map[key.name] = value
+            }
+        }
+        return map
+    }
+
     suspend fun getPlaybackBookmark(mediaKey: String): Long {
         val prefs = context.dataStore.data.firstOrNull() ?: return 0L
         val posKey = longPreferencesKey(PREFIX_BOOKMARK + mediaKey.hashCode())

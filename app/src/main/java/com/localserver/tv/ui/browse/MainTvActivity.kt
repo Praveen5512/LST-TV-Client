@@ -4,31 +4,31 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
-import android.widget.FrameLayout
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
-import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.FragmentActivity
-import androidx.leanback.widget.HorizontalGridView
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.localserver.tv.R
 import com.localserver.tv.data.api.MediaItemDto
 import com.localserver.tv.data.api.MediaServerClient
 import com.localserver.tv.data.discovery.TvNsdDiscoveryManager
-import com.localserver.tv.data.repository.CategorySection
 import com.localserver.tv.data.repository.MediaCardModel
 import com.localserver.tv.data.repository.MediaRepository
 import com.localserver.tv.data.repository.ServerPreferences
-import com.localserver.tv.ui.connect.ManualIpDialog
 import com.localserver.tv.ui.connect.ServerSelectDialog
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -41,31 +41,37 @@ class MainTvActivity : FragmentActivity() {
     private lateinit var discoveryManager: TvNsdDiscoveryManager
     private lateinit var actionHandler: MediaItemActionHandler
 
-    // UI View References
+    // Background & Top Bar Views
     private lateinit var ivHeroBackdrop: ImageView
-    private lateinit var tvServerStatus: TextView
+    private lateinit var containerPlayerStatus: LinearLayout
+    private lateinit var tvPlayerStatus: TextView
     private lateinit var containerServerStatus: LinearLayout
+    private lateinit var ivServerDot: ImageView
+    private lateinit var tvServerStatus: TextView
     private lateinit var tvClock: TextView
-    private lateinit var scrollRows: NestedScrollView
 
-    // Left Nav Rail
-    private lateinit var btnNavHome: FrameLayout
-    private lateinit var btnNavContinue: FrameLayout
-    private lateinit var btnNavMovies: FrameLayout
-    private lateinit var btnNavMusic: FrameLayout
-    private lateinit var btnNavFolders: FrameLayout
-    private lateinit var btnNavSettings: FrameLayout
+    // Content State Views
+    private lateinit var layoutLoading: LinearLayout
+    private lateinit var tvLoadingTitle: TextView
+    private lateinit var tvLoadingSubtitle: TextView
 
-    // Content Sections & Grids
-    private lateinit var layoutContinueWatching: LinearLayout
-    private lateinit var hgvContinueWatching: HorizontalGridView
-    private lateinit var layoutMovies: LinearLayout
-    private lateinit var hgvMovies: HorizontalGridView
-    private lateinit var layoutMusic: LinearLayout
-    private lateinit var hgvMusic: HorizontalGridView
-    private lateinit var layoutFolders: LinearLayout
-    private lateinit var hgvFolders: HorizontalGridView
-    private lateinit var tvHeaderFolders: TextView
+    private lateinit var layoutNoServer: LinearLayout
+    private lateinit var tvNoServerTitle: TextView
+    private lateinit var btnConnectServer: Button
+
+    private lateinit var layoutContent: LinearLayout
+    private lateinit var tvHeaderBreadcrumb: TextView
+    private lateinit var tvHeaderCount: TextView
+    private lateinit var rvMediaList: RecyclerView
+    private lateinit var layoutEmptyList: LinearLayout
+    private lateinit var tvEmptyListMessage: TextView
+
+    // List Adapter
+    private lateinit var mediaListAdapter: MediaListAdapter
+
+    // Navigation and Data State
+    private var currentServerUrl: String? = null
+    private var rootFolderCards: List<MediaCardModel> = emptyList()
 
     data class FolderNavState(
         val shareId: String,
@@ -75,16 +81,10 @@ class MainTvActivity : FragmentActivity() {
     )
 
     private val folderNavStack = mutableListOf<FolderNavState>()
-    private var rootFolderCards: List<MediaCardModel> = emptyList()
-
-    // Adapters
-    private lateinit var continueWatchingAdapter: ContinueWatchingAdapter
-    private lateinit var moviesAdapter: MoviePosterAdapter
-    private lateinit var musicAdapter: MoviePosterAdapter
-    private lateinit var foldersAdapter: MoviePosterAdapter
-
-    private var currentServerUrl: String? = null
     private var backdropJob: Job? = null
+    private var loadJob: Job? = null
+    private var folderLoadJob: Job? = null
+
     private val clockHandler = Handler(Looper.getMainLooper())
     private val clockRunnable = object : Runnable {
         override fun run() {
@@ -99,23 +99,47 @@ class MainTvActivity : FragmentActivity() {
 
         initDependencies()
         bindViews()
-        setupNavRail()
-        setupGrids()
-        setupServerCapsule()
+        setupMediaListView()
+        setupTopBarCapsules()
+        setupNoServerView()
         startClock()
 
+        // Requirement 2:
+        // When in a folder, back button goes to parent directory.
+        // App only exits when reached root directory, showing confirmation prompt:
+        // "Are you sure you want to close the app?"
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                // If a folder is currently loading, cancel it and safely return
+                if (folderLoadJob?.isActive == true) {
+                    folderLoadJob?.cancel()
+                    if (folderNavStack.isNotEmpty()) {
+                        folderNavStack.removeAt(folderNavStack.lastIndex)
+                        if (folderNavStack.isNotEmpty()) {
+                            val prev = folderNavStack.last()
+                            loadFolderContents(prev.shareId, prev.folderPath, prev.displayBreadcrumb)
+                        } else {
+                            showContentState()
+                            renderRootShares()
+                        }
+                    } else {
+                        showContentState()
+                        renderRootShares()
+                    }
+                    return
+                }
+
                 if (folderNavStack.isNotEmpty()) {
                     navigateFolderBack()
                 } else {
-                    isEnabled = false
-                    onBackPressedDispatcher.onBackPressed()
+                    showExitConfirmationDialog()
                 }
             }
         })
 
-        observeServerAndLoad()
+        // Discovery listener & initial server connection validation
+        startDiscoveryListener()
+        validateAndConnectActiveServer()
     }
 
     private fun initDependencies() {
@@ -139,142 +163,75 @@ class MainTvActivity : FragmentActivity() {
 
     private fun bindViews() {
         ivHeroBackdrop = findViewById(R.id.ivHeroBackdrop)
-        tvServerStatus = findViewById(R.id.tvServerStatus)
+        containerPlayerStatus = findViewById(R.id.containerPlayerStatus)
+        tvPlayerStatus = findViewById(R.id.tvPlayerStatus)
         containerServerStatus = findViewById(R.id.containerServerStatus)
+        ivServerDot = findViewById(R.id.ivServerDot)
+        tvServerStatus = findViewById(R.id.tvServerStatus)
         tvClock = findViewById(R.id.tvClock)
-        scrollRows = findViewById(R.id.scrollRows)
 
-        btnNavHome = findViewById(R.id.btnNavHome)
-        btnNavContinue = findViewById(R.id.btnNavContinue)
-        btnNavMovies = findViewById(R.id.btnNavMovies)
-        btnNavMusic = findViewById(R.id.btnNavMusic)
-        btnNavFolders = findViewById(R.id.btnNavFolders)
-        btnNavSettings = findViewById(R.id.btnNavSettings)
+        layoutLoading = findViewById(R.id.layoutLoading)
+        tvLoadingTitle = findViewById(R.id.tvLoadingTitle)
+        tvLoadingSubtitle = findViewById(R.id.tvLoadingSubtitle)
 
-        layoutContinueWatching = findViewById(R.id.layoutContinueWatching)
-        hgvContinueWatching = findViewById(R.id.hgvContinueWatching)
-        layoutMovies = findViewById(R.id.layoutMovies)
-        hgvMovies = findViewById(R.id.hgvMovies)
-        layoutMusic = findViewById(R.id.layoutMusic)
-        hgvMusic = findViewById(R.id.hgvMusic)
-        layoutFolders = findViewById(R.id.layoutFolders)
-        hgvFolders = findViewById(R.id.hgvFolders)
-        tvHeaderFolders = findViewById(R.id.tvHeaderFolders)
+        layoutNoServer = findViewById(R.id.layoutNoServer)
+        tvNoServerTitle = findViewById(R.id.tvNoServerTitle)
+        btnConnectServer = findViewById(R.id.btnConnectServer)
+
+        layoutContent = findViewById(R.id.layoutContent)
+        tvHeaderBreadcrumb = findViewById(R.id.tvHeaderBreadcrumb)
+        tvHeaderCount = findViewById(R.id.tvHeaderCount)
+        rvMediaList = findViewById(R.id.rvMediaList)
+        layoutEmptyList = findViewById(R.id.layoutEmptyList)
+        tvEmptyListMessage = findViewById(R.id.tvEmptyListMessage)
     }
 
-    private fun setupNavRail() {
-        btnNavHome.isSelected = true
+    private fun setupMediaListView() {
+        mediaListAdapter = MediaListAdapter(
+            onItemFocused = { item -> onCardFocused(item) },
+            onItemClicked = { item, siblings -> actionHandler.handleItemClicked(item, siblings) },
+            onItemLongClicked = { item -> actionHandler.handleItemClicked(item, forceDialog = true) }
+        )
 
-        val navButtons = listOf(btnNavHome, btnNavContinue, btnNavMovies, btnNavMusic, btnNavFolders, btnNavSettings)
-
-        fun selectNavTab(selected: FrameLayout) {
-            navButtons.forEach { it.isSelected = (it == selected) }
+        rvMediaList.apply {
+            layoutManager = LinearLayoutManager(this@MainTvActivity, LinearLayoutManager.VERTICAL, false)
+            adapter = mediaListAdapter
+            setHasFixedSize(true)
+            setItemViewCacheSize(12)
         }
+    }
 
-        btnNavHome.setOnClickListener {
-            selectNavTab(btnNavHome)
-            scrollRows.smoothScrollTo(0, 0)
-            if (layoutFolders.visibility == View.VISIBLE && hgvFolders.adapter?.itemCount ?: 0 > 0) {
-                hgvFolders.requestFocus()
-            } else if (hgvContinueWatching.adapter?.itemCount ?: 0 > 0) {
-                hgvContinueWatching.requestFocus()
-            } else {
-                hgvMovies.requestFocus()
+    private fun setupTopBarCapsules() {
+        // Edit / select default external player (Requirement 3)
+        containerPlayerStatus.setOnClickListener {
+            actionHandler.openSelectPlayerDialog {
+                updatePlayerStatus()
             }
         }
+        updatePlayerStatus()
 
-        btnNavContinue.setOnClickListener {
-            selectNavTab(btnNavContinue)
-            scrollRows.smoothScrollTo(0, layoutContinueWatching.top)
-            hgvContinueWatching.requestFocus()
-        }
-
-        btnNavMovies.setOnClickListener {
-            selectNavTab(btnNavMovies)
-            scrollRows.smoothScrollTo(0, layoutMovies.top)
-            hgvMovies.requestFocus()
-        }
-
-        btnNavMusic.setOnClickListener {
-            selectNavTab(btnNavMusic)
-            if (layoutMusic.visibility == View.VISIBLE) {
-                scrollRows.smoothScrollTo(0, layoutMusic.top)
-                hgvMusic.requestFocus()
-            }
-        }
-
-        btnNavFolders.setOnClickListener {
-            selectNavTab(btnNavFolders)
-            if (layoutFolders.visibility == View.VISIBLE) {
-                scrollRows.smoothScrollTo(0, layoutFolders.top)
-                hgvFolders.requestFocus()
-            }
-        }
-
-        btnNavSettings.setOnClickListener {
+        // Switch / select server
+        containerServerStatus.setOnClickListener {
             showServerSelectDialog()
         }
     }
 
-    private fun setupGrids() {
-        val sharedPool = androidx.recyclerview.widget.RecyclerView.RecycledViewPool().apply {
-            setMaxRecycledViews(0, 20)
-        }
+    private fun updatePlayerStatus() {
+        lifecycleScope.launch {
+            val isDefault = preferences.isExternalPlayerDefault()
+            val defaultName = preferences.getDefaultExternalAppName()
+            val defaultPkg = preferences.getDefaultExternalPackage()
 
-        continueWatchingAdapter = ContinueWatchingAdapter(
-            onItemFocused = { item -> onCardFocused(item) },
-            onItemClicked = { item, siblings -> actionHandler.handleItemClicked(item, siblings) },
-            onItemLongClicked = { item -> actionHandler.handleItemClicked(item, forceDialog = true) }
-        )
-        hgvContinueWatching.apply {
-            setHasFixedSize(true)
-            setItemViewCacheSize(6)
-            isNestedScrollingEnabled = false
-            adapter = continueWatchingAdapter
-        }
-
-        moviesAdapter = MoviePosterAdapter(
-            onItemFocused = { item -> onCardFocused(item) },
-            onItemClicked = { item, siblings -> actionHandler.handleItemClicked(item, siblings) },
-            onItemLongClicked = { item -> actionHandler.handleItemClicked(item, forceDialog = true) }
-        )
-        hgvMovies.apply {
-            setHasFixedSize(true)
-            setItemViewCacheSize(8)
-            setRecycledViewPool(sharedPool)
-            isNestedScrollingEnabled = false
-            adapter = moviesAdapter
-        }
-
-        musicAdapter = MoviePosterAdapter(
-            onItemFocused = { item -> onCardFocused(item) },
-            onItemClicked = { item, siblings -> actionHandler.handleItemClicked(item, siblings) },
-            onItemLongClicked = { item -> actionHandler.handleItemClicked(item, forceDialog = true) }
-        )
-        hgvMusic.apply {
-            setHasFixedSize(true)
-            setItemViewCacheSize(8)
-            setRecycledViewPool(sharedPool)
-            isNestedScrollingEnabled = false
-            adapter = musicAdapter
-        }
-
-        foldersAdapter = MoviePosterAdapter(
-            onItemFocused = { item -> onCardFocused(item) },
-            onItemClicked = { item, siblings -> actionHandler.handleItemClicked(item, siblings) },
-            onItemLongClicked = { item -> actionHandler.handleItemClicked(item, forceDialog = true) }
-        )
-        hgvFolders.apply {
-            setHasFixedSize(true)
-            setItemViewCacheSize(8)
-            setRecycledViewPool(sharedPool)
-            isNestedScrollingEnabled = false
-            adapter = foldersAdapter
+            if (isDefault && (!defaultPkg.isNullOrEmpty() || defaultName != null)) {
+                tvPlayerStatus.text = "Player: ${defaultName ?: defaultPkg}"
+            } else {
+                tvPlayerStatus.text = "Player: Choose"
+            }
         }
     }
 
-    private fun setupServerCapsule() {
-        containerServerStatus.setOnClickListener {
+    private fun setupNoServerView() {
+        btnConnectServer.setOnClickListener {
             showServerSelectDialog()
         }
     }
@@ -292,8 +249,7 @@ class MainTvActivity : FragmentActivity() {
     private fun onCardFocused(item: MediaCardModel) {
         backdropJob?.cancel()
         backdropJob = lifecycleScope.launch {
-            delay(300) // Debounce backdrop load
-            // Only load backdrop via Coil if item is an actual image to avoid streaming video data
+            delay(250) // Debounce backdrop load
             if (item.mediaItem.isImage && item.streamUrl.isNotEmpty()) {
                 ivHeroBackdrop.load(item.streamUrl) {
                     crossfade(150)
@@ -306,258 +262,163 @@ class MainTvActivity : FragmentActivity() {
         }
     }
 
-    private fun observeServerAndLoad() {
+    private fun startDiscoveryListener() {
+        discoveryManager.startDiscovery()
         lifecycleScope.launch {
-            // Continuously scan for available media servers on Wi-Fi and Hotspot
-            discoveryManager.startDiscovery()
-
-            launch {
-                discoveryManager.discoveredServers.collectLatest { list ->
-                    if (list.isNotEmpty()) {
-                        // Auto-connect if no server is active or if previous server connection failed
-                        if (currentServerUrl == null) {
-                            val first = list.first()
-                            val url = first.baseUrl
-                            currentServerUrl = url
-                            preferences.setActiveServer(url)
-                            updateServerCapsuleText("${first.name} • ${first.host}:${first.port} (Connected)")
-                            loadMediaForServer(url)
-                        }
+            discoveryManager.discoveredServers.collectLatest { list ->
+                if (currentServerUrl == null && list.isNotEmpty()) {
+                    val active = preferences.getActiveServer()
+                    if (active.isNullOrBlank()) {
+                        val first = list.first()
+                        validateAndLoadServer(first.baseUrl, first.name)
                     }
                 }
             }
+        }
+    }
 
+    /**
+     * Requirement 1 & 3:
+     * Validates if active connection is still alive. If not alive, displays "There are no connected server"
+     * with button to navigate to connect server options. Shows loading screen until connection data is ready.
+     */
+    private fun validateAndConnectActiveServer() {
+        lifecycleScope.launch {
             val active = preferences.getActiveServer()
-            if (!active.isNullOrBlank()) {
-                currentServerUrl = active
-                updateServerCapsuleText("Connecting to $active…")
-                val result = repository.aggregateBrowseContent(active)
-                if (result.isSuccess) {
-                    val sections = result.getOrNull().orEmpty()
-                    updateServerCapsuleText(active)
-                    populateBrowseRows(sections)
-                } else {
-                    currentServerUrl = null
-                    updateServerCapsuleText("Server offline • Searching Wi-Fi / Hotspot…")
-                    loadDemoPreviewContent()
-                    // Discovery is active and will auto-connect once server is found
-                }
+            if (active.isNullOrBlank()) {
+                showNoServerState()
             } else {
-                updateServerCapsuleText("Searching for Servers on Wi-Fi / Hotspot…")
-                loadDemoPreviewContent()
+                validateAndLoadServer(active)
             }
         }
     }
 
-    private fun updateServerCapsuleText(text: String) {
-        tvServerStatus.text = text
-    }
+    fun validateAndLoadServer(baseUrl: String, customServerName: String? = null) {
+        loadJob?.cancel()
+        loadJob = lifecycleScope.launch {
+            showLoadingState(
+                title = "Connecting to Server…",
+                subtitle = "Checking connection at $baseUrl…"
+            )
+            updateServerCapsuleText("Connecting to $baseUrl…", isConnecting = true)
 
-    fun loadMediaForServer(baseUrl: String) {
-        lifecycleScope.launch {
-            currentServerUrl = baseUrl
+            // Step 1: Validate connection is still alive (Requirement 1)
+            val isAlive = repository.checkServerHealth(baseUrl)
+            if (!isAlive) {
+                currentServerUrl = null
+                showNoServerState()
+                updateServerCapsuleText("Server Offline • No Connection", isConnected = false)
+                return@launch
+            }
+
+            // Step 2: Fetch and aggregate server media content (Requirement 3: Loading until data ready)
+            tvLoadingSubtitle.text = "Loading media shares from server…"
             val result = repository.aggregateBrowseContent(baseUrl)
             if (result.isSuccess) {
+                currentServerUrl = baseUrl
+                preferences.setActiveServer(baseUrl, customServerName)
+
+                val displayAddress = baseUrl.removePrefix("http://").removePrefix("https://")
+                val title = if (!customServerName.isNullOrBlank()) "$customServerName • $displayAddress" else displayAddress
+                updateServerCapsuleText("$title (Connected)", isConnected = true)
+
                 val sections = result.getOrNull().orEmpty()
-                updateServerCapsuleText(baseUrl)
-                populateBrowseRows(sections)
+                val folderSection = sections.find { it.id == "folders" }
+                rootFolderCards = folderSection?.items.orEmpty()
+
+                folderNavStack.clear()
+                showContentState()
+                renderRootShares()
             } else {
-                Toast.makeText(
-                    this@MainTvActivity,
-                    "Failed to connect to $baseUrl. Searching network…",
-                    Toast.LENGTH_SHORT
-                ).show()
                 currentServerUrl = null
-                updateServerCapsuleText("Server offline • Searching Wi-Fi / Hotspot…")
-                loadDemoPreviewContent()
-                discoveryManager.startDiscovery()
+                showNoServerState()
+                updateServerCapsuleText("Server Error • Unreachable", isConnected = false)
             }
         }
     }
 
-    private fun populateBrowseRows(sections: List<CategorySection>) {
-        val recentSection = sections.find { it.id == "recent" }
-        if (recentSection != null && recentSection.items.isNotEmpty()) {
-            layoutContinueWatching.visibility = View.VISIBLE
-            continueWatchingAdapter.submitList(recentSection.items)
-        } else {
-            layoutContinueWatching.visibility = View.GONE
-        }
+    private fun showLoadingState(title: String, subtitle: String) {
+        layoutLoading.visibility = View.VISIBLE
+        tvLoadingTitle.text = title
+        tvLoadingSubtitle.text = subtitle
 
-        val videoSection = sections.find { it.id == "videos" }
-        if (videoSection != null && videoSection.items.isNotEmpty()) {
-            layoutMovies.visibility = View.VISIBLE
-            moviesAdapter.submitList(videoSection.items)
-        } else {
-            layoutMovies.visibility = View.GONE
-        }
+        layoutNoServer.visibility = View.GONE
+        layoutContent.visibility = View.GONE
+    }
 
-        val musicSection = sections.find { it.id == "audio" }
-        if (musicSection != null && musicSection.items.isNotEmpty()) {
-            layoutMusic.visibility = View.VISIBLE
-            musicAdapter.submitList(musicSection.items)
-        } else {
-            layoutMusic.visibility = View.GONE
-        }
+    private fun showNoServerState() {
+        layoutLoading.visibility = View.GONE
+        layoutContent.visibility = View.GONE
 
-        val folderSection = sections.find { it.id == "folders" }
-        if (folderSection != null && folderSection.items.isNotEmpty()) {
-            rootFolderCards = folderSection.items
-            layoutFolders.visibility = View.VISIBLE
-            if (folderNavStack.isEmpty()) {
-                tvHeaderFolders.text = "Folders & Shares Explorer"
-                foldersAdapter.submitList(rootFolderCards)
+        layoutNoServer.visibility = View.VISIBLE
+        tvNoServerTitle.text = "There are no connected server"
+
+        btnConnectServer.requestFocus()
+    }
+
+    private fun showContentState() {
+        layoutLoading.visibility = View.GONE
+        layoutNoServer.visibility = View.GONE
+        layoutContent.visibility = View.VISIBLE
+    }
+
+    private fun updateServerCapsuleText(text: String, isConnected: Boolean? = null, isConnecting: Boolean = false) {
+        tvServerStatus.text = text
+        when {
+            isConnecting -> {
+                ivServerDot.setImageResource(R.drawable.ic_yellow_dot)
             }
-        } else {
-            if (folderNavStack.isEmpty()) {
-                layoutFolders.visibility = View.GONE
+            isConnected == true -> {
+                ivServerDot.setImageResource(R.drawable.ic_green_dot)
             }
-        }
-
-        // If no items at all, show demo
-        if (sections.isEmpty() || sections.all { it.items.isEmpty() }) {
-            loadDemoPreviewContent()
+            else -> {
+                ivServerDot.setImageResource(R.drawable.ic_red_dot)
+            }
         }
     }
 
-    private fun loadDemoPreviewContent() {
-        val demoContinueWatching = listOf(
-            MediaCardModel(
-                title = "Interstellar",
-                subtitle = "14.2 GB • 1080p",
-                mediaItem = MediaItemDto(name = "Interstellar.mkv", path = "Movies/Interstellar.mkv", isDirectory = false, size = 15247187968L, mimeType = "video/x-matroska"),
-                shareId = "demo_movies",
-                shareName = "Movies",
-                streamUrl = "",
-                resumePositionMs = 2540000L,
-                durationMs = 10140000L
-            ),
-            MediaCardModel(
-                title = "Blade Runner 2049",
-                subtitle = "18.5 GB • 4K UHD",
-                mediaItem = MediaItemDto(name = "BladeRunner2049.mkv", path = "Movies/BladeRunner2049.mkv", isDirectory = false, size = 19864223744L, mimeType = "video/x-matroska"),
-                shareId = "demo_movies",
-                shareName = "Movies",
-                streamUrl = "",
-                resumePositionMs = 6420000L,
-                durationMs = 9840000L
-            ),
-            MediaCardModel(
-                title = "Dune: Part Two",
-                subtitle = "22.1 GB • 4K Dolby",
-                mediaItem = MediaItemDto(name = "Dune2.2024.mkv", path = "Movies/Dune2.2024.mkv", isDirectory = false, size = 23728867328L, mimeType = "video/x-matroska"),
-                shareId = "demo_movies",
-                shareName = "Movies",
-                streamUrl = "",
-                resumePositionMs = 3300000L,
-                durationMs = 9960000L
-            ),
-            MediaCardModel(
-                title = "Oppenheimer",
-                subtitle = "24.6 GB • 4K IMAX",
-                mediaItem = MediaItemDto(name = "Oppenheimer.mkv", path = "Movies/Oppenheimer.mkv", isDirectory = false, size = 26414776320L, mimeType = "video/x-matroska"),
-                shareId = "demo_movies",
-                shareName = "Movies",
-                streamUrl = "",
-                resumePositionMs = 180000L,
-                durationMs = 10800000L
-            )
-        )
-
-        val demoMovies = listOf(
-            MediaCardModel(
-                title = "Interstellar",
-                subtitle = "14.2 GB • 1080p • 2h 49m",
-                mediaItem = MediaItemDto(name = "Interstellar.mkv", path = "Movies/Interstellar.mkv", isDirectory = false, size = 15247187968L, mimeType = "video/x-matroska"),
-                shareId = "demo_movies",
-                shareName = "Movies",
-                streamUrl = ""
-            ),
-            MediaCardModel(
-                title = "Arrival",
-                subtitle = "8.4 GB • 1080p • 1h 56m",
-                mediaItem = MediaItemDto(name = "Arrival.2016.mkv", path = "Movies/Arrival.2016.mkv", isDirectory = false, size = 9019431321L, mimeType = "video/x-matroska"),
-                shareId = "demo_movies",
-                shareName = "Movies",
-                streamUrl = ""
-            ),
-            MediaCardModel(
-                title = "The Dark Knight",
-                subtitle = "12.8 GB • 4K • 2h 32m",
-                mediaItem = MediaItemDto(name = "DarkKnight.mkv", path = "Movies/DarkKnight.mkv", isDirectory = false, size = 13743895347L, mimeType = "video/x-matroska"),
-                shareId = "demo_movies",
-                shareName = "Movies",
-                streamUrl = ""
-            ),
-            MediaCardModel(
-                title = "Inception",
-                subtitle = "11.2 GB • 1080p • 2h 28m",
-                mediaItem = MediaItemDto(name = "Inception.mkv", path = "Movies/Inception.mkv", isDirectory = false, size = 12025908428L, mimeType = "video/x-matroska"),
-                shareId = "demo_movies",
-                shareName = "Movies",
-                streamUrl = ""
-            ),
-            MediaCardModel(
-                title = "The Matrix",
-                subtitle = "9.6 GB • 4K • 2h 16m",
-                mediaItem = MediaItemDto(name = "Matrix.mkv", path = "Movies/Matrix.mkv", isDirectory = false, size = 10307921510L, mimeType = "video/x-matroska"),
-                shareId = "demo_movies",
-                shareName = "Movies",
-                streamUrl = ""
-            )
-        )
-
-        val demoFolders = listOf(
-            MediaCardModel(
-                title = "Movies & Cinema",
-                subtitle = "Share Folder",
-                mediaItem = MediaItemDto(name = "Movies & Cinema", path = "", isDirectory = true),
-                shareId = "demo_movies",
-                shareName = "Movies & Cinema",
-                streamUrl = ""
-            ),
-            MediaCardModel(
-                title = "TV Series & Anime",
-                subtitle = "Share Folder",
-                mediaItem = MediaItemDto(name = "TV Series & Anime", path = "", isDirectory = true),
-                shareId = "demo_series",
-                shareName = "TV Series & Anime",
-                streamUrl = ""
-            ),
-            MediaCardModel(
-                title = "Music Library",
-                subtitle = "Share Folder",
-                mediaItem = MediaItemDto(name = "Music Library", path = "", isDirectory = true),
-                shareId = "demo_music",
-                shareName = "Music Library",
-                streamUrl = ""
-            )
-        )
-
-        rootFolderCards = demoFolders
-        layoutFolders.visibility = View.VISIBLE
-        tvHeaderFolders.text = "Folders & Shares Explorer"
-        foldersAdapter.submitList(demoFolders)
-
-        layoutContinueWatching.visibility = View.VISIBLE
-        continueWatchingAdapter.submitList(demoContinueWatching)
-
-        layoutMovies.visibility = View.VISIBLE
-        moviesAdapter.submitList(demoMovies)
+    /**
+     * Requirement 4:
+     * Displays root shared folders without out-of-context text.
+     */
+    private fun renderRootShares() {
+        tvHeaderBreadcrumb.text = "📁 Shared Folders"
+        displayMediaList(rootFolderCards, "No shares configured on this server")
     }
 
+    private fun displayMediaList(items: List<MediaCardModel>, emptyMessage: String) {
+        tvHeaderCount.text = "${items.size} ${if (items.size == 1) "item" else "items"}"
+        mediaListAdapter.submitList(items)
+
+        if (items.isEmpty()) {
+            layoutEmptyList.visibility = View.VISIBLE
+            tvEmptyListMessage.text = emptyMessage
+            rvMediaList.visibility = View.GONE
+        } else {
+            layoutEmptyList.visibility = View.GONE
+            rvMediaList.visibility = View.VISIBLE
+            rvMediaList.scrollToPosition(0)
+            rvMediaList.requestFocus()
+        }
+    }
+
+    /**
+     * Folder Explorer inside the List View
+     */
     private fun openFolder(shareId: String, folderPath: String, folderTitle: String) {
         val shareName = if (folderNavStack.isEmpty()) {
             folderTitle
         } else {
             folderNavStack.first().shareName
         }
+
         val breadcrumb = if (folderNavStack.isEmpty()) {
             "📁 $folderTitle"
         } else {
             val cleanPath = folderPath.trim('/')
             "📁 $shareName / ${cleanPath.substringAfterLast('/')}"
         }
+
         folderNavStack.add(
             FolderNavState(
                 shareId = shareId,
@@ -569,97 +430,132 @@ class MainTvActivity : FragmentActivity() {
         loadFolderContents(shareId, folderPath, breadcrumb)
     }
 
+    /**
+     * Loads folder contents with a dedicated loading screen and optimized batch data mapping
+     * to ensure smooth user experience when opening directories with many items.
+     */
     private fun loadFolderContents(shareId: String, folderPath: String, breadcrumb: String) {
         val server = currentServerUrl ?: return
-        lifecycleScope.launch {
-            tvHeaderFolders.text = breadcrumb
+
+        folderLoadJob?.cancel()
+        folderLoadJob = lifecycleScope.launch {
+            val folderTitle = if (breadcrumb.contains('/')) {
+                breadcrumb.removePrefix("📁 ").substringAfterLast('/').trim()
+            } else {
+                breadcrumb.removePrefix("📁 ").trim()
+            }
+
+            // Show loading screen while directory contents are being fetched and rendered
+            showLoadingState(
+                title = "Opening $folderTitle…",
+                subtitle = "Loading items from server…"
+            )
+
             val result = repository.getMedia(server, shareId, folderPath)
             if (result.isSuccess) {
                 val list = result.getOrNull()?.items.orEmpty()
-                val folderCards = mutableListOf<MediaCardModel>()
 
-                // Prepend Back Card
-                val parentName = if (folderNavStack.size > 1) {
-                    val prev = folderNavStack[folderNavStack.size - 2]
-                    prev.displayBreadcrumb.removePrefix("📁 ").substringAfterLast('/')
-                } else {
-                    "Shares List"
-                }
+                // Batch load bookmark snapshot once for instantaneous O(1) in-memory lookups
+                val bookmarksSnapshot = repository.getAllBookmarksSnapshot()
 
-                folderCards.add(
-                    MediaCardModel(
-                        title = "⬅ .. [Back]",
-                        subtitle = "Back to $parentName",
-                        mediaItem = MediaItemDto(
-                            id = "__BACK__",
-                            name = "..",
-                            path = "__BACK__",
-                            isDirectory = true
-                        ),
-                        shareId = shareId,
-                        shareName = parentName,
-                        streamUrl = ""
-                    )
-                )
+                // Perform sorting and model construction off the UI thread (Dispatchers.Default)
+                val folderCards = withContext(Dispatchers.Default) {
+                    val cards = mutableListOf<MediaCardModel>()
 
-                // Sort: Subfolders first, then files alphabetically
-                val sorted = list.sortedWith(
-                    compareByDescending<MediaItemDto> { it.isDirectory }
-                        .thenBy { it.name.lowercase() }
-                )
+                    // Back navigation item
+                    val parentName = if (folderNavStack.size > 1) {
+                        val prev = folderNavStack[folderNavStack.size - 2]
+                        prev.displayBreadcrumb.removePrefix("📁 ").substringAfterLast('/').trim()
+                    } else {
+                        "Shared Folders"
+                    }
 
-                for (item in sorted) {
-                    val streamUrl = item.buildStreamUrl(server, shareId)
-                    val bookmark = if (item.isVideo) preferences.getPlaybackBookmark(streamUrl) else 0L
-                    val duration = if (item.isVideo) preferences.getMediaDuration(streamUrl) else 0L
-
-                    folderCards.add(
+                    cards.add(
                         MediaCardModel(
-                            title = item.name,
-                            subtitle = when {
-                                item.isDirectory -> "Folder"
-                                item.isVideo -> "${item.formattedSize} • Video"
-                                item.isAudio -> "${item.formattedSize} • Audio"
-                                item.isImage -> "${item.formattedSize} • Photo"
-                                else -> item.formattedSize.ifEmpty { "File" }
-                            },
-                            mediaItem = item,
+                            title = "⬅ .. [Back]",
+                            subtitle = "Back to $parentName",
+                            mediaItem = MediaItemDto(
+                                id = "__BACK__",
+                                name = "..",
+                                path = "__BACK__",
+                                isDirectory = true
+                            ),
                             shareId = shareId,
-                            shareName = breadcrumb.removePrefix("📁 "),
-                            streamUrl = streamUrl,
-                            resumePositionMs = bookmark,
-                            durationMs = duration
+                            shareName = parentName,
+                            streamUrl = ""
                         )
                     )
+
+                    // Sort: Subfolders first, then files alphabetically
+                    val sorted = list.sortedWith(
+                        compareByDescending<MediaItemDto> { it.isDirectory }
+                            .thenBy { it.name.lowercase() }
+                    )
+
+                    for (item in sorted) {
+                        val streamUrl = item.buildStreamUrl(server, shareId)
+                        val urlHash = streamUrl.hashCode()
+                        val bookmark = if (item.isVideo) bookmarksSnapshot["bookmark_$urlHash"] ?: 0L else 0L
+                        val duration = if (item.isVideo) bookmarksSnapshot["duration_$urlHash"] ?: 0L else 0L
+
+                        cards.add(
+                            MediaCardModel(
+                                title = item.name,
+                                subtitle = when {
+                                    item.isDirectory -> "Folder"
+                                    item.isVideo -> "${item.formattedSize} • Video"
+                                    item.isAudio -> "${item.formattedSize} • Audio"
+                                    item.isImage -> "${item.formattedSize} • Photo"
+                                    else -> item.formattedSize.ifEmpty { "File" }
+                                },
+                                mediaItem = item,
+                                shareId = shareId,
+                                shareName = breadcrumb.removePrefix("📁 "),
+                                streamUrl = streamUrl,
+                                resumePositionMs = bookmark,
+                                durationMs = duration
+                            )
+                        )
+                    }
+                    cards
                 }
 
-                layoutFolders.visibility = View.VISIBLE
-                foldersAdapter.submitList(folderCards)
-                scrollRows.smoothScrollTo(0, layoutFolders.top)
-                hgvFolders.requestFocus()
-
-                if (list.isEmpty()) {
-                    Toast.makeText(this@MainTvActivity, "Empty folder", Toast.LENGTH_SHORT).show()
-                }
+                // Render content once ready
+                showContentState()
+                tvHeaderBreadcrumb.text = breadcrumb
+                displayMediaList(folderCards, "Empty folder")
             } else {
+                showContentState()
                 Toast.makeText(
                     this@MainTvActivity,
                     "Failed to open folder: ${result.exceptionOrNull()?.message ?: "Server error"}",
                     Toast.LENGTH_SHORT
                 ).show()
+
+                val isAlive = repository.checkServerHealth(server)
+                if (!isAlive) {
+                    currentServerUrl = null
+                    showNoServerState()
+                    updateServerCapsuleText("Server Disconnected", isConnected = false)
+                    return@launch
+                }
+
                 if (folderNavStack.isNotEmpty()) {
                     folderNavStack.removeAt(folderNavStack.lastIndex)
                     if (folderNavStack.isNotEmpty()) {
                         val prev = folderNavStack.last()
-                        tvHeaderFolders.text = prev.displayBreadcrumb
+                        tvHeaderBreadcrumb.text = prev.displayBreadcrumb
                     } else {
-                        tvHeaderFolders.text = "Folders & Shares Explorer"
+                        tvHeaderBreadcrumb.text = "📁 Shared Folders"
                     }
                 }
             }
         }
     }
 
+    /**
+     * Requirement 2: Go back to parent directory when hit back button
+     */
     private fun navigateFolderBack() {
         if (folderNavStack.isNotEmpty()) {
             folderNavStack.removeAt(folderNavStack.lastIndex)
@@ -667,32 +563,33 @@ class MainTvActivity : FragmentActivity() {
                 val prev = folderNavStack.last()
                 loadFolderContents(prev.shareId, prev.folderPath, prev.displayBreadcrumb)
             } else {
-                // Returned to Root Shares Explorer
-                tvHeaderFolders.text = "Folders & Shares Explorer"
-                foldersAdapter.submitList(rootFolderCards)
-                scrollRows.smoothScrollTo(0, layoutFolders.top)
-                hgvFolders.requestFocus()
+                renderRootShares()
             }
         }
+    }
+
+    /**
+     * Requirement 2:
+     * App should only exit when reached root directory.
+     * Before exiting, confirmation prompt: "Are you sure you want to close the app?"
+     */
+    private fun showExitConfirmationDialog() {
+        val dialog = ExitConfirmationDialog.newInstance {
+            finishAffinity()
+        }
+        dialog.show(supportFragmentManager, ExitConfirmationDialog.TAG)
     }
 
     fun showServerSelectDialog() {
         val dialog = ServerSelectDialog.newInstance()
         dialog.setDependencies(discoveryManager, preferences, client) { selectedUrl ->
-            currentServerUrl = selectedUrl
-            lifecycleScope.launch {
-                preferences.setActiveServer(selectedUrl)
-                updateServerCapsuleText(selectedUrl)
-                loadMediaForServer(selectedUrl)
-            }
+            validateAndLoadServer(selectedUrl)
         }
         dialog.setOnDismissListener {
             lifecycleScope.launch {
                 val active = preferences.getActiveServer()
                 if (!active.isNullOrEmpty() && active != currentServerUrl) {
-                    currentServerUrl = active
-                    updateServerCapsuleText(active)
-                    loadMediaForServer(active)
+                    validateAndLoadServer(active)
                 }
             }
         }
@@ -701,12 +598,20 @@ class MainTvActivity : FragmentActivity() {
 
     override fun onResume() {
         super.onResume()
+        updatePlayerStatus()
         lifecycleScope.launch {
             val active = preferences.getActiveServer()
-            if (!active.isNullOrEmpty()) {
-                currentServerUrl = active
-                updateServerCapsuleText(active)
-                loadMediaForServer(active)
+            if (active.isNullOrBlank()) {
+                showNoServerState()
+            } else {
+                val isAlive = repository.checkServerHealth(active)
+                if (!isAlive) {
+                    currentServerUrl = null
+                    showNoServerState()
+                    updateServerCapsuleText("Server Offline • No Connection", isConnected = false)
+                } else if (currentServerUrl == null) {
+                    validateAndLoadServer(active)
+                }
             }
         }
     }
@@ -715,6 +620,8 @@ class MainTvActivity : FragmentActivity() {
         super.onDestroy()
         clockHandler.removeCallbacks(clockRunnable)
         backdropJob?.cancel()
+        loadJob?.cancel()
+        folderLoadJob?.cancel()
         discoveryManager.stopDiscovery()
     }
 }
