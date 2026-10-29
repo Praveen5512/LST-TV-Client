@@ -1,4 +1,4 @@
-# LST TV Client — Android TV & Google TV Media Player
+# LST TV Client — Android TV
 
 [![Platform](https://img.shields.io/badge/Platform-Android%20TV%20%7C%20Google%20TV-3DDC84?logo=android&logoColor=white)](https://developer.android.com/tv)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.24-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
